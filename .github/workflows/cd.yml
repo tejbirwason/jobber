@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - main
+    paths:
+      - 'backend/**'
 
 jobs:
   deploy:
@@ -29,4 +31,4 @@ jobs:
 
       - name: Deploy jobber
         run: |
-          modal deploy jobber.py
+          modal deploy backend/jobber.py
