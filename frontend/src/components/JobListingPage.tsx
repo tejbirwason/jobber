@@ -121,7 +121,7 @@ const JobListingPage: React.FC = () => {
                           variant={
                             job.website_jobid.startsWith('dice_')
                               ? 'secondary'
-                              : 'primary'
+                              : 'default'
                           }
                           className='px-2 py-1 text-xs'
                           style={{
