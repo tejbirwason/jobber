@@ -1,7 +1,5 @@
 import logging
 
-from playwright.async_api import Playwright
-
 logger = logging.getLogger(__name__)
 
 TELEGRAM_BOT_TOKEN = "7230321353:AAFJkYp1QvtN77f737ffvuLzdud199oAtxU"
@@ -21,7 +19,7 @@ def send_telegram_message(job):
         logger.error(f"Failed to send Telegram message. Status: {response.status_code}")
 
 
-async def get_undetected_page(playwright: Playwright):
+async def get_undetected_page(playwright):
     browser = await playwright.chromium.launch(headless=True)
     context = await browser.new_context(
         user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",

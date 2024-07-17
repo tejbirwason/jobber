@@ -3,8 +3,8 @@ import logging
 import os
 from datetime import datetime
 
+from dice import add_jobs, filter_new_jobs, scrape_dice_page
 from modal import App, Image, Period, Secret
-from playwright.async_api import async_playwright
 from utils import (
     extract_job_info,
     get_next_page_url,
@@ -28,7 +28,6 @@ logger = logging.getLogger(__name__)
         "apt-get install -y software-properties-common",
         "apt-add-repository non-free",
         "apt-add-repository contrib",
-        "pip install yagmail",
         "pip install playwright==1.44.0",
         "playwright install-deps chromium",
         "playwright install chromium",
@@ -38,6 +37,7 @@ logger = logging.getLogger(__name__)
 async def scrape_and_update_jobs():
     import boto3
     from boto3.dynamodb.conditions import Key
+    from playwright.async_api import async_playwright
 
     logger.info("Starting scrape_and_update_jobs function")
 
@@ -110,3 +110,104 @@ async def scrape_and_update_jobs():
 
     logger.info("Finished scraping and updating jobs table")
     return "Finished scraping and updating jobs table"
+
+
+# https://www.dice.com/jobs?q=software%20engineer&countryCode=US&radius=30&radiusUnit=mi&page=1&pageSize=100&filters.postedDate=ONE&filters.employmentType=FULLTIME&language=en&jobSavedSearchId=11ae6c3d-4abb-4e2c-98f1-be6866023295
+
+
+@app.function(
+    schedule=Period(minutes=60),
+    secrets=[Secret.from_name("aws")],
+    image=Image.debian_slim(python_version="3.10")
+    .run_commands(  # Doesn't work with 3.11 yet
+        "apt-get update",
+        "apt-get install -y software-properties-common",
+        "apt-add-repository non-free",
+        "apt-add-repository contrib",
+        "pip install playwright==1.44.0",
+        "playwright install-deps chromium",
+        "playwright install chromium",
+    )
+    .pip_install("boto3", "beautifulsoup4", "requests"),
+)
+async def scrape_dice_jobs():
+    url = "https://www.dice.com/jobs?q=software%20engineer&countryCode=US&radius=30&radiusUnit=mi&page=1&pageSize=100&filters.postedDate=ONE&filters.employmentType=FULLTIME&language=en"
+    jobs = await scrape_dice_page(url, logger)
+    logger.info("Finished scraping Dice jobs page")
+
+    new_jobs = filter_new_jobs(jobs[:3])
+
+    if new_jobs:
+        enriched_jobs = scrape_dice_job_descriptions.remote(new_jobs)
+        logger.info(f"Enriched {len(enriched_jobs)} new jobs with descriptions")
+        add_jobs(enriched_jobs)
+    else:
+        logger.info("No new jobs to enrich")
+
+    return f"Finished scraping Dice jobs page. Enriched and added {len(new_jobs)} new jobs."
+
+
+@app.function(image=Image.debian_slim(python_version="3.10"))
+def scrape_dice_job_descriptions(jobs):
+    import logging
+
+    logger = logging.getLogger(__name__)
+
+    logger.info("Starting scrape_dice_job_descriptions function")
+
+    result = list(scrape_dice_job_description.map(jobs))
+
+    for job in result:
+        logger.info(f"Enriched job: {job}")
+
+    logger.info("Finished scrape_dice_job_descriptions function")
+    return result
+
+
+@app.function(
+    image=Image.debian_slim(python_version="3.10")
+    .run_commands(  # Doesn't work with 3.11 yet
+        "apt-get update",
+        "apt-get install -y software-properties-common",
+        "apt-add-repository non-free",
+        "apt-add-repository contrib",
+        "pip install playwright==1.44.0",
+        "playwright install-deps chromium",
+        "playwright install chromium",
+    )
+    .pip_install("boto3", "beautifulsoup4", "requests"),
+)
+async def scrape_dice_job_description(job):
+    from bs4 import BeautifulSoup
+    from playwright.async_api import async_playwright
+
+    async with async_playwright() as p:
+        browser = await p.chromium.launch()
+        page = await browser.new_page()
+
+        try:
+            await page.goto(job["link"])
+            await page.wait_for_load_state("networkidle")
+
+            html_content = await page.content()
+            soup = BeautifulSoup(html_content, "html.parser")
+
+            # Try to find the innermost job description div
+            description_elem = soup.select_one('[data-testid="jobDescriptionHtml"]')
+
+            if description_elem:
+                description = description_elem.get_text(strip=True, separator="\n")
+            else:
+                logger.warning(f"Could not find job description for {job['title']}")
+                description = "Description not found"
+
+            enriched_job = {**job, "description": description}
+
+            logger.info(f"Enriched job with description: {job['title']}")
+            return enriched_job
+
+        except Exception as e:
+            logger.error(f"Error scraping job description: {str(e)}")
+            return job
+        finally:
+            await browser.close()
