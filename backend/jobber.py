@@ -112,12 +112,10 @@ async def scrape_and_update_jobs():
     return "Finished scraping and updating jobs table"
 
 
-# https://www.dice.com/jobs?q=software%20engineer&countryCode=US&radius=30&radiusUnit=mi&page=1&pageSize=100&filters.postedDate=ONE&filters.employmentType=FULLTIME&language=en&jobSavedSearchId=11ae6c3d-4abb-4e2c-98f1-be6866023295
-
-
 @app.function(
     schedule=Period(minutes=60),
     secrets=[Secret.from_name("aws")],
+    timeout=600,
     image=Image.debian_slim(python_version="3.10")
     .run_commands(  # Doesn't work with 3.11 yet
         "apt-get update",
@@ -135,19 +133,24 @@ async def scrape_dice_jobs():
     jobs = await scrape_dice_page(url, logger)
     logger.info("Finished scraping Dice jobs page")
 
-    new_jobs = filter_new_jobs(jobs[:3])
+    new_jobs = filter_new_jobs(jobs)
 
     if new_jobs:
         enriched_jobs = scrape_dice_job_descriptions.remote(new_jobs)
         logger.info(f"Enriched {len(enriched_jobs)} new jobs with descriptions")
         add_jobs(enriched_jobs)
+
+        # Send Telegram message for each new job
+        for job in enriched_jobs:
+            send_telegram_message(job)
+            logger.info(f"Sent Telegram message for new job: {job['title']}")
     else:
         logger.info("No new jobs to enrich")
 
     return f"Finished scraping Dice jobs page. Enriched and added {len(new_jobs)} new jobs."
 
 
-@app.function(image=Image.debian_slim(python_version="3.10"))
+@app.function(image=Image.debian_slim(python_version="3.10"), timeout=600)
 def scrape_dice_job_descriptions(jobs):
     import logging
 
@@ -158,9 +161,8 @@ def scrape_dice_job_descriptions(jobs):
     result = list(scrape_dice_job_description.map(jobs))
 
     for job in result:
-        logger.info(f"Enriched job: {job}")
+        logger.info(f"Enriched job: {job['title']} / {job['company']}")
 
-    logger.info("Finished scrape_dice_job_descriptions function")
     return result
 
 

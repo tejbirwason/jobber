@@ -4,7 +4,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Briefcase, Clock } from 'lucide-react';
+import { Briefcase, Clock, MapPin } from 'lucide-react';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
 import { DynamoDBDocumentClient, ScanCommand } from '@aws-sdk/lib-dynamodb';
 
@@ -78,7 +78,6 @@ const JobListingPage: React.FC = () => {
       return `${Math.floor(diffInSeconds / 3600)} hours ago`;
     return `${Math.floor(diffInSeconds / 86400)} days ago`;
   };
-
   return (
     <div className='flex h-screen'>
       {/* Sidebar */}
@@ -113,14 +112,27 @@ const JobListingPage: React.FC = () => {
                         <Clock className='h-4 w-4 mr-2' />
                         {getRelativeTime(job.timestamp)}
                       </div>
+                      <div className='text-sm text-gray-600 flex items-center'>
+                        <MapPin className='h-4 w-4 mr-2' />
+                        {job.location}
+                      </div>
                       <div className='flex items-center space-x-2 mt-1'>
                         <Badge
-                          variant='secondary'
+                          variant={
+                            job.website_jobid.startsWith('dice_')
+                              ? 'secondary'
+                              : 'primary'
+                          }
                           className='px-2 py-1 text-xs'
+                          style={{
+                            backgroundColor: job.website_jobid.startsWith(
+                              'dice_'
+                            )
+                              ? '#8B5CF6' // A pleasant purple for Dice
+                              : '#3B82F6', // A pleasant blue for Indeed
+                            color: 'white',
+                          }}
                         >
-                          {job.location}
-                        </Badge>
-                        <Badge variant='outline' className='px-2 py-1 text-xs'>
                           {job.website_jobid.startsWith('dice_')
                             ? 'Dice'
                             : 'Indeed'}
