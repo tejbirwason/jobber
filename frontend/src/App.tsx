@@ -4,45 +4,45 @@ import {
   Routes,
   Route,
   Link,
-  useParams,
+  Navigate,
 } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
-// Import your components
-import JobListingPage from './components/JobListingPage';
+import JobDetails from './components/JobDetails';
+import JobListingShell from './components/JobListingShell';
 
-// Placeholder for individual job component
-const JobDetails: React.FC = () => {
-  const { jobId } = useParams<{ jobId: string }>();
-  return <div>Job Details for Job ID: {jobId}</div>;
+const NotFound: React.FC = () => {
+  return (
+    <div className='flex flex-col items-center justify-center h-full'>
+      <h1 className='text-4xl font-bold mb-4'>404 - Page Not Found</h1>
+      <p className='text-xl mb-8'>The page you're looking for doesn't exist.</p>
+      <Link to='/jobs'>
+        <Button variant='default'>Go to Jobs</Button>
+      </Link>
+    </div>
+  );
 };
+
+const queryClient = new QueryClient();
 
 const App: React.FC = () => {
   return (
-    <Router>
-      <div className='min-h-screen flex flex-col'>
-        <header className='bg-gray-800 text-white p-4'>
-          <nav>
-            <Link to='/jobs'>
-              <Button variant='ghost'>Jobs</Button>
-            </Link>
-          </nav>
-        </header>
-
-        <main className='flex-grow'>
-          <Routes>
-            <Route path='/jobs' element={<JobListingPage />}>
-              <Route path=':jobId' element={<JobDetails />} />
-            </Route>
-            <Route path='*' element={<JobListingPage />} />
-          </Routes>
-        </main>
-
-        <footer className='bg-gray-800 text-white p-4 text-center'>
-          © 2024 Job Tracking App
-        </footer>
-      </div>
-    </Router>
+    <QueryClientProvider client={queryClient}>
+      <Router>
+        <div className='min-h-screen flex flex-col'>
+          <main className='flex-grow'>
+            <Routes>
+              <Route path='/' element={<Navigate to='/jobs' replace />} />
+              <Route path='/jobs' element={<JobListingShell />}>
+                <Route path=':jobId' element={<JobDetails />} />
+              </Route>
+              <Route path='*' element={<NotFound />} />
+            </Routes>
+          </main>
+        </div>
+      </Router>
+    </QueryClientProvider>
   );
 };
 

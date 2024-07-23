@@ -4,6 +4,7 @@ def filter_new_jobs(jobs):
     import boto3
     from boto3.dynamodb.conditions import Key
 
+    print("Initializing DynamoDB resource for filtering new jobs")
     dynamodb = boto3.resource(
         "dynamodb",
         aws_access_key_id=os.environ["AWS_ACCESS_KEY_ID"],
@@ -11,13 +12,19 @@ def filter_new_jobs(jobs):
         region_name="us-east-1",
     )
     table = dynamodb.Table("jobs")
-    new_jobs = []
+
+    print(f"Checking {len(jobs)} jobs against existing entries in DynamoDB")
+    existing_job_ids = set()
     for job in jobs:
         response = table.query(
-            KeyConditionExpression=Key("website_jobid").eq(job["id"])
+            KeyConditionExpression=Key("id").eq(job["id"]), ProjectionExpression="id"
         )
-        if not response["Items"]:
-            new_jobs.append(job)
+        if response["Items"]:
+            existing_job_ids.add(job["id"])
+
+    new_jobs = [job for job in jobs if job["id"] not in existing_job_ids]
+    print(f"Found {len(new_jobs)} new jobs out of {len(jobs)} total jobs")
+
     return new_jobs
 
 
@@ -27,6 +34,7 @@ def add_jobs(jobs):
 
     import boto3
 
+    print("Initializing DynamoDB resource")
     dynamodb = boto3.resource(
         "dynamodb",
         aws_access_key_id=os.environ["AWS_ACCESS_KEY_ID"],
@@ -34,57 +42,37 @@ def add_jobs(jobs):
         region_name="us-east-1",
     )
     table = dynamodb.Table("jobs")
-    for job in jobs:
-        new_job = {"website_jobid": job["id"], "timestamp": str(datetime.now()), **job}
-        table.put_item(Item=new_job)
 
+    # Remove duplicates
+    unique_jobs = {job["id"]: job for job in jobs}.values()
 
-async def scrape_dice_page(url, logger):
-    from bs4 import BeautifulSoup
-    from playwright.async_api import async_playwright
+    batch_size = 25
+    batch_items = []
 
-    async with async_playwright() as p:
-        browser = await p.chromium.launch()
-        page = await browser.new_page()
+    print(f"Starting to add {len(unique_jobs)} unique jobs...")
+    for job in unique_jobs:
+        new_job = {"id": job["id"], "timestamp": str(datetime.now()), **job}
+        batch_items.append({"PutRequest": {"Item": new_job}})
 
-        base_url = "https://www.dice.com/jobs?q=software%20engineer&countryCode=US&radius=30&radiusUnit=mi&pageSize=100&filters.postedDate=ONE&filters.employmentType=FULLTIME&language=en"
+        if len(batch_items) == batch_size:
+            print(f"Writing batch of {len(batch_items)} items to DynamoDB")
+            with table.batch_writer() as batch:
+                for item in batch_items:
+                    batch.put_item(Item=item["PutRequest"]["Item"])
+            batch_items = []
 
-        logger.info(f"Navigating to Dice URL: {base_url}")
-        await page.goto(base_url)
-        await page.wait_for_load_state("networkidle")
+    # Write any remaining items
+    if batch_items:
+        print(f"Writing final batch of {len(batch_items)} items to DynamoDB")
+        with table.batch_writer() as batch:
+            for item in batch_items:
+                batch.put_item(Item=item["PutRequest"]["Item"])
 
-        await ensure_remote_checkbox_checked(page, logger)
-        await page.wait_for_load_state("networkidle")
-
-        all_jobs = []
-        while True:
-            logger.info("Scraping page")
-            await page.wait_for_load_state("networkidle")
-
-            html_content = await page.content()
-            soup = BeautifulSoup(html_content, "html.parser")
-            jobs = await extract_jobs(soup, logger)
-            all_jobs.extend(jobs)
-
-            next_button = await page.query_selector(
-                "li.pagination-next:not(.disabled) a"
-            )
-            if not next_button:
-                logger.info("No more pages to scrape")
-                break
-
-            logger.info("Clicking next page")
-            await next_button.click()
-            await page.wait_for_load_state("networkidle")
-
-        await browser.close()
-        logger.info(f"Browser closed. Total jobs scraped: {len(all_jobs)}")
-
-    return all_jobs
+    print("Finished adding all unique jobs to DynamoDB")
 
 
 # Check if the remote option is selected
-async def ensure_remote_checkbox_checked(page, logger):
+async def ensure_remote_checkbox_checked(page):
     remote_checkbox = await page.query_selector(
         'button[aria-label="Filter Search Results by Remote"]'
     )
@@ -101,12 +89,12 @@ async def ensure_remote_checkbox_checked(page, logger):
                 'el => el.querySelector("i").classList.contains("fa-check-square-o")'
             )
             if is_checked_after:
-                logger.info("Remote checkbox has been checked.")
+                print("Remote checkbox has been checked.")
             return True
     return False
 
 
-async def extract_jobs(soup, logger):
+async def extract_jobs(soup):
     job_cards = soup.find_all("dhi-search-card")
     jobs = []
 
@@ -141,8 +129,6 @@ async def extract_jobs(soup, logger):
         company_image = (
             company_image_element.get("src", "N/A") if company_image_element else "N/A"
         )
-
-        logger.info(f"Scraped job: {title} / {company}")
 
         job = {
             "id": "dice" + "_" + job_id,
