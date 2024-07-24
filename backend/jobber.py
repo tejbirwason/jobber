@@ -112,7 +112,11 @@ def scrape():
     yc_jobs = scrape_yc_jobs.remote()
     indeed_jobs = scrape_indeed_jobs.remote()
 
-    send_telegram_message(dice_jobs + yc_jobs + indeed_jobs)
+    all_jobs = dice_jobs + yc_jobs + indeed_jobs
+    if all_jobs:
+        send_telegram_message(all_jobs)
+    else:
+        print("No new jobs found across all platforms.")
 
 
 @app.local_entrypoint()
