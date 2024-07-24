@@ -1,30 +1,12 @@
-import asyncio
-import random
-
-from playwright.async_api import async_playwright
-
 # from common import app
-from utils import get_undetected_page
-
-
-async def simulate_human_behavior(page):
-    # Randomly scroll
-    if random.random() < 0.7:
-        scroll_amount = random.randint(100, 500)
-        await page.evaluate(f"window.scrollBy(0, {scroll_amount})")
-        await asyncio.sleep(random.uniform(0.5, 2))
-
-    # Randomly move mouse
-    if random.random() < 0.5:
-        x = random.randint(0, 1000)
-        y = random.randint(0, 1000)
-        await page.mouse.move(x, y)
-        await asyncio.sleep(random.uniform(0.3, 1))
+from common import app
+from indeed.utils import get_undetected_page
 
 
 # @app.function(
-#     image=Image.debian_slim(python_version="3.10")
-#     .run_commands(  # Doesn't work with 3.11 yet
+#     image=Image.debian_slim(
+#         python_version="3.10"
+#     ).run_commands(  # Doesn't work with 3.11 yet
 #         "apt-get update",
 #         "apt-get install -y software-properties-common",
 #         "apt-add-repository non-free",
@@ -32,13 +14,18 @@ async def simulate_human_behavior(page):
 #         "pip install playwright==1.44.0",
 #         "playwright install-deps chromium",
 #         "playwright install chromium",
-#     )
-#     .pip_install("beautifulsoup4"),
+#     ),
 #     timeout=1800,
 #     retries=3,
 # )
-async def scrape_google_jobs():
+async def scrape_indeed(limit=5):
+    import asyncio
+    import random
+
+    from playwright.async_api import async_playwright
+
     async with async_playwright() as p:
+        # full_rul = "https://www.indeed.com/jobs?q=software+engineer&sc=0kf%3Aattr%28DSQF7%29jt%28fulltime%29%3B&sort=date&vjk=6d002f797b17b532"
         base_url = "https://www.indeed.com"
         current_url = "/jobs?q=software+engineer&sc=0kf%3Aattr%28DSQF7%29jt%28fulltime%29%3B&sort=date"
         url = base_url + current_url
@@ -123,7 +110,7 @@ async def scrape_google_jobs():
 
                 # Assemble job information
                 job = {
-                    "id": job_id,
+                    "id": "indeed" + "_" + job_id,
                     "title": title_text,
                     "company": company_text,
                     "company_link": company_link,
@@ -134,6 +121,11 @@ async def scrape_google_jobs():
                 }
 
                 all_jobs.append(job)
+
+                if len(all_jobs) >= limit:
+                    print(f"Reached the limit of {limit} jobs. Stopping the scrape.")
+                    await browser.close()
+                    return all_jobs
 
             # Check for next page
             next_button = await page.query_selector(
@@ -166,12 +158,25 @@ def print_job_details(jobs):
         print("---")
 
 
-if __name__ == "__main__":
-    jobs = asyncio.run(scrape_google_jobs())
+async def simulate_human_behavior(page):
+    import asyncio
+    import random
+
+    # Randomly scroll
+    if random.random() < 0.7:
+        scroll_amount = random.randint(100, 500)
+        await page.evaluate(f"window.scrollBy(0, {scroll_amount})")
+        await asyncio.sleep(random.uniform(0.5, 2))
+
+    # Randomly move mouse
+    if random.random() < 0.5:
+        x = random.randint(0, 1000)
+        y = random.randint(0, 1000)
+        await page.mouse.move(x, y)
+        await asyncio.sleep(random.uniform(0.3, 1))
+
+
+@app.local_entrypoint()
+def test_scrape():
+    jobs = scrape_indeed.remote()
     print_job_details(jobs)
-
-
-# @app.local_entrypoint()
-# def main():
-#     jobs = scrape_google_jobs.remote()
-#     print_job_details(jobs)

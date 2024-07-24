@@ -1,0 +1,48 @@
+"id","site","job_url","job_url_direct","title","company","location","job_type","date_posted","salary_source","interval","min_amount","max_amount","currency","is_remote","job_level","job_function","company_industry","listing_type","emails","description","company_url","company_url_direct","company_addresses","company_num_employees","company_revenue","company_description","logo_photo_url","banner_photo_url","ceo_name","ceo_photo_url"
+"262ca7ae4875277b","indeed","https://www.indeed.com/viewjob?jk=262ca7ae4875277b","http://www.indeed.com/job/software-engineer-262ca7ae4875277b","Software Engineer","Stark.Ai","Remote, US","fulltime","2024-07-23","direct_data","yearly",90000.0,120000.0,"USD",True,"","","","","","**Role Overview:** We are looking for a talented and motivated Software Engineer to join our dynamic team. As a Software Engineer at Mantra Technologies, you will be instrumental in developing and maintaining our AI-driven platform. You will work on various exciting projects, from designing new features to optimizing existing functionalities, to help job seekers find their perfect career paths.
+
+**Key Responsibilities:**
+
+* **Software Development:** Develop, test, and deploy high-quality software solutions for our AI-driven platform.
+* **Feature Implementation:** Collaborate with product managers and designers to implement new features and enhancements.
+* **Code Quality:** Write clean, efficient, and well-documented code. Participate in code reviews and contribute to best practices.
+* **Troubleshooting:** Identify, diagnose, and resolve software defects and performance issues.
+* **Collaboration:** Work with cross-functional teams, including engineering, data science, and product teams, to deliver integrated solutions.
+* **Innovation:** Stay current with emerging technologies and industry trends, and bring innovative ideas to the team.
+
+**Qualifications:**
+
+* **Educational Background:** Bachelor’s degree in Computer Science, Engineering, or a related field. Relevant experience or projects will also be considered.
+* **Technical Skills:** Proficiency in programming languages such as Python, JavaScript, Java, or similar. Experience with web frameworks and RESTful APIs is a plus.
+* **Problem-Solving:** Strong analytical and problem-solving skills with the ability to troubleshoot complex issues.
+* **Communication:** Excellent verbal and written communication skills. Ability to work effectively in a collaborative team environment.
+* **Adaptability:** Willingness to learn new technologies and adapt to evolving requirements and challenges.
+
+**Preferred Qualifications:**
+
+* Experience with AI/ML technologies or frameworks.
+* Familiarity with cloud platforms (e.g., AWS, Azure, Google Cloud).
+* Knowledge of version control systems (e.g., Git) and CI/CD pipelines.
+
+Job Type: Full-time
+
+Pay: $90,000.00 - $120,000.00 per year
+
+Benefits:
+
+* Health insurance
+* Paid time off
+* Work from home
+
+Schedule:
+
+* 8 hour shift
+* Day shift
+* Monday to Friday
+
+Experience:
+
+* REST: 1 year (Preferred)
+* Java: 1 year (Preferred)
+
+Work Location: Remote","https://www.indeed.com/cmp/Stark.ai-1","","","","","","","","",""

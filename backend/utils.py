@@ -43,7 +43,18 @@ def send_telegram_message(jobs):
         if categorized_jobs[category]:
             message += f"{category}:\n"
             for job in categorized_jobs[category]:
-                message += f"[{job['title']} - {job['company']}]({job['link']})\n"
+                job_site = (
+                    "dice"
+                    if job["id"].startswith("dice_")
+                    else "indeed"
+                    if job["id"].startswith("indeed_")
+                    else "yc"
+                    if job["id"].startswith("yc_")
+                    else "unknown"
+                )
+                message += (
+                    f"[{job['title']} - {job['company']} ({job_site})]({job['link']})\n"
+                )
             message += "\n"
 
     url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"

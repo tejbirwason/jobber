@@ -5,7 +5,7 @@ import random
 async def get_undetected_page(playwright, url):
     MAX_RETRIES = 5
     for attempt in range(MAX_RETRIES):
-        browser = await playwright.chromium.launch(headless=True)
+        browser = await playwright.chromium.launch()
         context = await browser.new_context(
             user_agent=f"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_{random.randint(10,15)}_{random.randint(1,7)}) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/{random.randint(80,90)}.0.{random.randint(4000,5000)}.0 Safari/537.36",
             viewport={
