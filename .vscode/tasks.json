@@ -3,14 +3,20 @@
   "tasks": [
     {
       "type": "shell",
-      "command": "cd frontend && yarn && yarn dev",
+      "command": "cd frontend && node -v && which node && yarn && yarn dev",
       "label": "Run Frontend Dev",
       "group": "none",
       "presentation": {
         "reveal": "always",
         "panel": "new"
       },
-      "problemMatcher": []
+      "problemMatcher": [],
+      "options": {
+        "shell": {
+          "executable": "zsh",
+          "args": ["-c"]
+        }
+      }
     }
   ]
 }

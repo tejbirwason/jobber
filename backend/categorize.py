@@ -1,6 +1,10 @@
 from common import app
 from modal import Image, Secret
-from prompts import CategorizedListings, get_prompt, sample_jobs
+from prompts import (
+    CategorizedListings,
+    get_prompt,
+    sample_jobs,
+)
 from utils import litellm_completion
 
 
@@ -43,9 +47,7 @@ def categorize_jobs_batch(job_listings=sample_jobs, batch_size=20):
 
     print(f"Starting batch categorization of {total_listings} job listings")
 
-    batches = [
-        job_listings[i : i + batch_size] for i in range(0, total_listings, batch_size)
-    ]
+    batches = [job_listings[i : i + batch_size] for i in range(0, total_listings, batch_size)]
     print(f"Created {len(batches)} batches for processing")
 
     batch_results = categorize_job_listings.map(batches)
@@ -62,7 +64,10 @@ def categorize_jobs_batch(job_listings=sample_jobs, batch_size=20):
 
 @app.function(
     image=Image.debian_slim().pip_install("instructor", "litellm"),
-    secrets=[Secret.from_name("anthropic"), Secret.from_name("openai")],
+    secrets=[
+        Secret.from_name("anthropic"),
+        Secret.from_name("openai"),
+    ],
     retries=3,
 )
 def categorize_job_listings(job_listings):
@@ -72,7 +77,12 @@ def categorize_job_listings(job_listings):
     """
     import json
 
-    def track_cost_callback(kwargs, completion_response, start_time, end_time):
+    def track_cost_callback(
+        kwargs,
+        completion_response,
+        start_time,
+        end_time,
+    ):
         import litellm
 
         try:
@@ -86,7 +96,10 @@ def categorize_job_listings(job_listings):
             print(f"Duration: {duration.total_seconds():.2f} seconds")
 
             if (
-                isinstance(completion_response, litellm.ModelResponse)
+                isinstance(
+                    completion_response,
+                    litellm.ModelResponse,
+                )
                 and "usage" in completion_response
             ):
                 usage = completion_response["usage"]

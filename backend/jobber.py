@@ -1,9 +1,10 @@
+from modal import Image, Secret
+
 from categorize import categorize_jobs
 from common import app
 from dice.scrape import scrape_dice, scrape_dice_job_descriptions
 from dice.utils import add_jobs, filter_new_jobs
 from indeed.scrape import scrape_indeed
-from modal import Image, Secret
 from utils import (
     send_telegram_message,
 )
@@ -64,8 +65,7 @@ def scrape_yc_jobs():
             scrape_yc_job_description.map([job["link"] for job in new_jobs])
         )
         jobs_with_descriptions = [
-            {**job, **job_info}
-            for job, job_info in zip(new_jobs, jobs_with_descriptions)
+            {**job, **job_info} for job, job_info in zip(new_jobs, jobs_with_descriptions)
         ]
 
         jobs_with_categories = categorize_jobs(jobs_with_descriptions)
