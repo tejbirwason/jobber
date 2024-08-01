@@ -1,5 +1,5 @@
-import React from 'react';
-import { Briefcase, Circle } from 'lucide-react';
+import React, { useState } from 'react';
+import { ArrowUpRight, Briefcase, Circle } from 'lucide-react';
 import { Job } from '@/types/job';
 import { useJobs } from '@/hooks/useJobs';
 import { updateJobSeen } from '@/db';
@@ -9,12 +9,14 @@ interface JobListingItemProps {
   isSelected: boolean;
   onSelect: () => void;
 }
+
 const JobListingItem: React.FC<JobListingItemProps> = ({
   job,
   isSelected,
   onSelect,
 }) => {
   const { markJobAsSeen } = useJobs();
+  const [isHovered, setIsHovered] = useState(false);
 
   const handleClick = async (e: React.MouseEvent) => {
     // Prevent click during drag
@@ -30,12 +32,19 @@ const JobListingItem: React.FC<JobListingItemProps> = ({
     }
   };
 
+  const handleLinkClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    window.open(job.link, '_blank');
+  };
+
   return (
     <div
       className={`p-3 bg-white rounded-lg shadow-sm cursor-pointer relative ${
         isSelected ? 'ring-2 ring-primary' : ''
-      }`}
+      } ${isHovered ? 'ring-2 ring-blue-300' : ''}`}
       onClick={handleClick}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
     >
       {!job.seen && (
         <Circle className='h-2 w-2 absolute top-2 right-2 text-blue-500 fill-current' />
@@ -49,6 +58,14 @@ const JobListingItem: React.FC<JobListingItemProps> = ({
           <span className='break-words'>{job.company}</span>
         </div>
       </div>
+      {isHovered && (
+        <button
+          className='absolute top-2 right-2 p-1 bg-white rounded shadow-md'
+          onClick={handleLinkClick}
+        >
+          <ArrowUpRight className='h-4 w-4' />
+        </button>
+      )}
     </div>
   );
 };
