@@ -1,22 +1,26 @@
 import React, { useState, useMemo } from 'react';
-import { useNavigate, useParams, Outlet } from 'react-router-dom';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Card, CardContent } from '@/components/ui/card';
 import { useQuery } from '@tanstack/react-query';
+import {
+  DragDropContext,
+  Droppable,
+  Draggable,
+  DropResult,
+} from 'react-beautiful-dnd';
+import { Loader2 } from 'lucide-react';
 
 import JobListingItem from './JobListingItem';
-import { fetchJobs } from '@/db';
 import { Job } from '@/types/job';
+import { fetchJobs, updateJobCategory } from '@/db';
+import JobDetails from './JobDetails';
 
 const JobListingShell: React.FC = () => {
-  const navigate = useNavigate();
-  const { jobId } = useParams<{ jobId: string }>();
-  const [selectedJobId, setSelectedJobId] = useState<string | null>(
-    jobId || null
-  );
-  const [selectedCategory, setSelectedCategory] = useState('Ideal Match');
+  const [selectedJob, setSelectedJob] = useState<Job | null>(null);
 
-  const { data: jobs = [] } = useQuery({
+  const {
+    data: jobs = [],
+    refetch,
+    isLoading,
+  } = useQuery({
     queryKey: ['jobs'],
     queryFn: fetchJobs,
     refetchInterval: 5 * 60 * 1000, // Refetch every 5 minutes
@@ -26,11 +30,22 @@ const JobListingShell: React.FC = () => {
     (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
   );
 
+  console.log('jobs', jobs);
+
+  const handleJobSelect = (job: Job) => {
+    setSelectedJob(job);
+  };
+
+  const handleCloseModal = () => {
+    setSelectedJob(null);
+  };
+
   const categories = [
-    'Ideal Match',
-    'Strong Potential',
     'Worth Considering',
-    'Not Suitable',
+    'Strong Potential',
+    'Ideal Match',
+    'Interested',
+    'Applied',
   ];
 
   const jobsByCategory = useMemo(() => {
@@ -41,65 +56,93 @@ const JobListingShell: React.FC = () => {
     }, {} as Record<string, Job[]>);
   }, [sortedJobs]);
 
-  const filteredJobs = jobsByCategory[selectedCategory] || [];
+  const onDragEnd = async (result: DropResult) => {
+    const { destination, source, draggableId } = result;
 
-  const handleJobSelect = (id: string) => {
-    setSelectedJobId(id);
-    navigate(`/jobs/${id}`);
+    if (!destination) {
+      return;
+    }
+
+    if (
+      destination.droppableId === source.droppableId &&
+      destination.index === source.index
+    ) {
+      return;
+    }
+
+    const job = sortedJobs.find((j) => j.id === draggableId);
+    if (!job) return;
+
+    const newCategory = destination.droppableId;
+
+    try {
+      await updateJobCategory(job.id, newCategory);
+      refetch();
+    } catch (error) {
+      console.error('Failed to update job category:', error);
+    }
   };
+
+  if (isLoading) {
+    return (
+      <div className='flex items-center justify-center h-screen'>
+        <Loader2 className='w-8 h-8 animate-spin' />
+      </div>
+    );
+  }
+
+  // TODO: Drag and drop not working
 
   return (
     <div className='flex h-screen'>
-      {/* Sidebar */}
-      <div className='w-1/4 border-r flex flex-col'>
-        <div className='p-4 border-b'>
-          <div className='grid grid-cols-2 gap-2'>
-            {categories.map((category) => (
-              <button
-                key={category}
-                onClick={() => setSelectedCategory(category)}
-                className={`p-2 text-xs rounded-md transition-colors ${
-                  selectedCategory === category
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-secondary hover:bg-secondary/80'
-                }`}
-              >
-                {category}
-                <br />({jobsByCategory[category]?.length || 0})
-              </button>
-            ))}
-          </div>
-        </div>
-        <ScrollArea className='flex-grow'>
-          {filteredJobs.map((job, index) => (
-            <React.Fragment key={`${job.id}-${index}`}>
-              <JobListingItem
-                job={job}
-                isSelected={job.id === selectedJobId}
-                onSelect={handleJobSelect}
-              />
-              {index < filteredJobs.length - 1 && (
-                <hr className='my-2 border-gray-200' />
-              )}
-            </React.Fragment>
+      <DragDropContext onDragEnd={onDragEnd}>
+        <div className='flex-grow flex overflow-x-auto'>
+          {categories.map((category) => (
+            <div key={category} className='flex-shrink-0 w-64 p-2'>
+              <h2 className='font-bold mb-2'>
+                {category} ({jobsByCategory[category]?.length || 0})
+              </h2>
+              <Droppable droppableId={category}>
+                {(provided) => (
+                  <div
+                    {...provided.droppableProps}
+                    ref={provided.innerRef}
+                    className='bg-gray-100 p-2 rounded min-h-[200px]'
+                  >
+                    {(jobsByCategory[category] || []).map((job, index) => (
+                      <Draggable
+                        key={job.id}
+                        draggableId={job.id}
+                        index={index}
+                      >
+                        {(provided, snapshot) => (
+                          <div
+                            ref={provided.innerRef}
+                            {...provided.draggableProps}
+                            {...provided.dragHandleProps}
+                            className={`mb-2 ${
+                              snapshot.isDragging ? 'opacity-50' : ''
+                            }`}
+                          >
+                            <JobListingItem
+                              job={job}
+                              isSelected={job.id === selectedJob?.id}
+                              onSelect={() => handleJobSelect(job)}
+                            />
+                          </div>
+                        )}
+                      </Draggable>
+                    ))}
+                    {provided.placeholder}
+                  </div>
+                )}
+              </Droppable>
+            </div>
           ))}
-        </ScrollArea>
-      </div>
+        </div>
+      </DragDropContext>
 
-      {/* Job Details */}
-      <div className='w-3/4 p-4'>
-        {selectedJobId ? (
-          <Outlet />
-        ) : (
-          <Card>
-            <CardContent className='pt-6'>
-              <p className='text-center text-gray-500'>
-                Select a job from the list to view details
-              </p>
-            </CardContent>
-          </Card>
-        )}
-      </div>
+      <JobDetails job={selectedJob} onClose={handleCloseModal} />
     </div>
   );
 };

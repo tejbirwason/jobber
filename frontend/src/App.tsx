@@ -9,7 +9,6 @@ import {
 import { Button } from '@/components/ui/button';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
-import JobDetails from './components/JobDetails';
 import JobListingShell from './components/JobListingShell';
 
 const NotFound: React.FC = () => {
@@ -34,9 +33,7 @@ const App: React.FC = () => {
           <main className='flex-grow'>
             <Routes>
               <Route path='/' element={<Navigate to='/jobs' replace />} />
-              <Route path='/jobs' element={<JobListingShell />}>
-                <Route path=':jobId' element={<JobDetails />} />
-              </Route>
+              <Route path='/jobs' element={<JobListingShell />} />
               <Route path='*' element={<NotFound />} />
             </Routes>
           </main>
