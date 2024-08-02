@@ -30,8 +30,6 @@ const JobListingShell: React.FC = () => {
     (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
   );
 
-  console.log('jobs', jobs);
-
   const handleJobSelect = (job: Job) => {
     setSelectedJob(job);
   };
