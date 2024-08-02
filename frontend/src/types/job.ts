@@ -15,4 +15,10 @@ export interface Job {
   category?: string;
   category_explanation?: string;
   seen?: boolean;
+  team_information?: string[];
+  product_information?: string[];
+  technology_stack?: string[];
+  key_responsibilities?: string[];
+  requirements?: string[];
+  exceptional_perks?: string[];
 }

@@ -5,6 +5,15 @@ import { Badge } from '@/components/ui/badge';
 import { Briefcase, Clock, MapPin, Calendar, ExternalLink } from 'lucide-react';
 import { Job } from '@/types/job';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
+import JobSummary from '@/components/JobSummary';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import { HelpCircle } from 'lucide-react';
+import { Separator } from './ui/separator';
 
 interface JobDetailsProps {
   job: Job | null;
@@ -25,35 +34,47 @@ const JobDetails = ({ job, onClose }: JobDetailsProps) => {
 
   if (!job) return null;
 
-  const getJobSource = (jobId: string) => {
-    if (jobId.startsWith('dice_'))
+  const jobSource = (() => {
+    if (job.id.startsWith('dice_'))
       return { name: 'Dice', color: 'bg-green-100 text-green-800' };
-    if (jobId.startsWith('indeed_'))
+    if (job.id.startsWith('indeed_'))
       return { name: 'Indeed', color: 'bg-blue-100 text-blue-800' };
-    if (jobId.startsWith('yc_'))
+    if (job.id.startsWith('yc_'))
       return { name: 'Y Combinator', color: 'bg-orange-100 text-orange-800' };
     return { name: 'Unknown', color: 'bg-gray-100 text-gray-800' };
-  };
+  })();
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogContent className='w-full max-w-5xl h-[80vh]' noAnimation>
         <Card className='w-full h-full overflow-auto'>
-          {job.category_explanation && (
-            <div className='bg-blue-100 p-2 mb-2 rounded-t-lg text-sm'>
-              <p className='text-blue-800'>{job.category_explanation}</p>
-            </div>
-          )}
           <CardHeader className='pb-2'>
             <div className='flex justify-between items-start'>
-              <div>
+              <div className='flex items-center'>
                 <CardTitle className='text-xl font-bold'>{job.title}</CardTitle>
-                <Badge
-                  variant='outline'
-                  className={`mt-1 ${getJobSource(job.id).color}`}
-                >
-                  {getJobSource(job.id).name}
+                <Badge variant='outline' className={`ml-2 ${jobSource.color}`}>
+                  {jobSource.name}
                 </Badge>
+                {job.category_explanation && (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger>
+                        <HelpCircle className='h-4 w-4 ml-2 text-gray-400' />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        {Array.isArray(job.category_explanation) ? (
+                          <ul className='list-disc pl-4'>
+                            {job.category_explanation.map((reason, index) => (
+                              <li key={index}>{reason}</li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <p>{job.category_explanation}</p>
+                        )}
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                )}
               </div>
               <div className='flex space-x-2'>
                 {job.link && (
@@ -108,6 +129,8 @@ const JobDetails = ({ job, onClose }: JobDetailsProps) => {
                   {job.employment_type}
                 </Badge>
               )}
+              <Separator className='my-4' />
+              <JobSummary job={job} />
               {(job.description_html || job.description) && (
                 <div className='mt-6 pt-4 border-t border-gray-200 flex flex-col flex-grow'>
                   <h3 className='text-lg font-semibold mb-2'>Description</h3>

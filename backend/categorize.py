@@ -1,11 +1,26 @@
+from typing import List
+
 from common import app
 from modal import Image, Secret
 from prompts import (
-    CategorizedListings,
-    get_prompt,
+    get_categorization_prompt,
     sample_jobs,
 )
-from utils import litellm_completion
+from pydantic import BaseModel, Field
+from utils import litellm_completion, track_cost_callback
+
+
+class JobListing(BaseModel):
+    id: str = Field(..., description="The ID of the job listing")
+    category: str = Field(
+        ...,
+        description="Category of the job listing",
+    )
+    explanation: List[str] = Field(..., description="List of reasons explaining the categorization")
+
+
+class CategorizedListings(BaseModel):
+    listings: List[JobListing] = Field(..., description="List of categorized job listings")
 
 
 def categorize_jobs(jobs):
@@ -18,7 +33,7 @@ def categorize_jobs(jobs):
             "id": job["id"],
             "title": job["title"],
             "company": job["company"],
-            **({"description": job["description"]} if "description" in job else {}),
+            **({"description": job.get("description_text") or job.get("description_html", "")}),
         }
         for job in jobs
     ]
@@ -77,42 +92,8 @@ def categorize_job_listings(job_listings):
     """
     import json
 
-    def track_cost_callback(
-        kwargs,
-        completion_response,
-        start_time,
-        end_time,
-    ):
-        import litellm
-
-        try:
-            response_cost = kwargs.get("response_cost", 0)
-            duration = end_time - start_time
-
-            print("-" * 40)
-            print("LLM Response Summary:")
-            print(f"Model: {kwargs['model']}")
-            print(f"Cost: ${response_cost:.6f}")
-            print(f"Duration: {duration.total_seconds():.2f} seconds")
-
-            if (
-                isinstance(
-                    completion_response,
-                    litellm.ModelResponse,
-                )
-                and "usage" in completion_response
-            ):
-                usage = completion_response["usage"]
-                print("Token Usage:")
-                print(f"  Completion: {usage.completion_tokens}")
-                print(f"  Prompt: {usage.prompt_tokens}")
-                print(f"  Total: {usage.total_tokens}")
-            print("-" * 40)
-        except:
-            print("Error occurred while printing LLM response summary")
-
     job_listings_json = json.dumps(job_listings)
-    content = get_prompt(job_listings_json)
+    content = get_categorization_prompt(job_listings_json)
 
     print(f"Calling LLM with {len(job_listings)} job listings...")
 

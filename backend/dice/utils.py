@@ -16,9 +16,7 @@ def filter_new_jobs(jobs):
     print(f"Checking {len(jobs)} jobs against existing entries in DynamoDB")
     existing_job_ids = set()
     for job in jobs:
-        response = table.query(
-            KeyConditionExpression=Key("id").eq(job["id"]), ProjectionExpression="id"
-        )
+        response = table.query(KeyConditionExpression=Key("id").eq(job["id"]), ProjectionExpression="id")
         if response["Items"]:
             existing_job_ids.add(job["id"])
 
@@ -73,9 +71,7 @@ def add_jobs(jobs):
 
 # Check if the remote option is selected
 async def ensure_remote_checkbox_checked(page):
-    remote_checkbox = await page.query_selector(
-        'button[aria-label="Filter Search Results by Remote"]'
-    )
+    remote_checkbox = await page.query_selector('button[aria-label="Filter Search Results by Remote"]')
     if remote_checkbox:
         is_checked = await remote_checkbox.evaluate(
             'el => el.querySelector("i").classList.contains("fa-check-square-o")'
@@ -104,9 +100,7 @@ async def extract_jobs(soup):
 
         title_link_element = card.find("a", {"data-cy": "card-title-link"})
         job_id = title_link_element.get("id") if title_link_element else "N/A"
-        title_link = (
-            f"https://www.dice.com/job-detail/{job_id}" if job_id != "N/A" else "N/A"
-        )
+        title_link = f"https://www.dice.com/job-detail/{job_id}" if job_id != "N/A" else "N/A"
 
         company_element = card.find("a", {"data-cy": "search-result-company-name"})
         company = company_element.text.strip() if company_element else "N/A"
@@ -115,20 +109,14 @@ async def extract_jobs(soup):
         location_element = card.find("span", {"data-cy": "search-result-location"})
         location = location_element.text.strip() if location_element else "N/A"
 
-        employment_type_element = card.find(
-            "span", {"data-cy": "search-result-employment-type"}
-        )
-        employment_type = (
-            employment_type_element.text.strip() if employment_type_element else "N/A"
-        )
+        employment_type_element = card.find("span", {"data-cy": "search-result-employment-type"})
+        employment_type = employment_type_element.text.strip() if employment_type_element else "N/A"
 
         posted_date_element = card.find("span", {"data-cy": "card-posted-date"})
         posted_date = posted_date_element.text.strip() if posted_date_element else "N/A"
 
         company_image_element = card.find("img", {"data-cy": "card-logo"})
-        company_image = (
-            company_image_element.get("src", "N/A") if company_image_element else "N/A"
-        )
+        company_image = company_image_element.get("src", "N/A") if company_image_element else "N/A"
 
         job = {
             "id": "dice" + "_" + job_id,

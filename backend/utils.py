@@ -52,9 +52,7 @@ def send_telegram_message(jobs):
                     if job["id"].startswith("yc_")
                     else "unknown"
                 )
-                message += (
-                    f"[{job['title']} - {job['company']} ({job_site})]({job['link']})\n"
-                )
+                message += f"[{job['title']} - {job['company']} ({job_site})]({job['link']})\n"
             message += "\n"
 
     url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
@@ -65,8 +63,41 @@ def send_telegram_message(jobs):
     }
     response = requests.get(url, params=params)
     if response.status_code == 200:
-        print(
-            f"Telegram message sent successfully with {sum(len(jobs) for jobs in categorized_jobs.values())} jobs"
-        )
+        print(f"Telegram message sent successfully with {sum(len(jobs) for jobs in categorized_jobs.values())} jobs")
     else:
         print(f"Failed to send Telegram message. Status: {response.status_code}")
+
+
+def track_cost_callback(
+    kwargs,
+    completion_response,
+    start_time,
+    end_time,
+):
+    import litellm
+
+    try:
+        response_cost = kwargs.get("response_cost", 0)
+        duration = end_time - start_time
+
+        print("-" * 40)
+        print("LLM Response Summary:")
+        print(f"Model: {kwargs['model']}")
+        print(f"Cost: ${response_cost:.6f}")
+        print(f"Duration: {duration.total_seconds():.2f} seconds")
+
+        if (
+            isinstance(
+                completion_response,
+                litellm.ModelResponse,
+            )
+            and "usage" in completion_response
+        ):
+            usage = completion_response["usage"]
+            print("Token Usage:")
+            print(f"  Completion: {usage.completion_tokens}")
+            print(f"  Prompt: {usage.prompt_tokens}")
+            print(f"  Total: {usage.total_tokens}")
+        print("-" * 40)
+    except:
+        print("Error occurred while printing LLM response summary")

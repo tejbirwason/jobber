@@ -1,13 +1,12 @@
-from modal import Image, Secret
-
 from categorize import categorize_jobs
 from common import app
 from dice.scrape import scrape_dice, scrape_dice_job_descriptions
 from dice.utils import add_jobs, filter_new_jobs
+from dynamodb import update_jobs_with_summaries
 from indeed.scrape import scrape_indeed
-from utils import (
-    send_telegram_message,
-)
+from modal import Image, Period, Secret
+from summarize import summarize_job_descriptions
+from utils import send_telegram_message
 from yc.scrape import scrape_yc, scrape_yc_job_description
 
 # ALWAYS BE APPLYING !!!
@@ -61,12 +60,8 @@ def scrape_yc_jobs():
 
     if new_jobs:
         jobs_with_descriptions = []
-        jobs_with_descriptions = list(
-            scrape_yc_job_description.map([job["link"] for job in new_jobs])
-        )
-        jobs_with_descriptions = [
-            {**job, **job_info} for job, job_info in zip(new_jobs, jobs_with_descriptions)
-        ]
+        jobs_with_descriptions = list(scrape_yc_job_description.map([job["link"] for job in new_jobs]))
+        jobs_with_descriptions = [{**job, **job_info} for job, job_info in zip(new_jobs, jobs_with_descriptions)]
 
         jobs_with_categories = categorize_jobs(jobs_with_descriptions)
         add_jobs(jobs_with_categories)
@@ -104,8 +99,10 @@ def scrape_indeed_jobs():
 
 
 @app.function(
+    secrets=[Secret.from_name("aws")],
     timeout=1800,
-    image=Image.debian_slim().pip_install("requests"),
+    image=Image.debian_slim().pip_install("boto3", "requests"),
+    schedule=Period(hours=3),
 )
 def scrape():
     dice_jobs = scrape_dice_jobs.remote()
@@ -115,10 +112,12 @@ def scrape():
     all_jobs = dice_jobs + yc_jobs + indeed_jobs
     if all_jobs:
         send_telegram_message(all_jobs)
+        summarized_jobs = summarize_job_descriptions(all_jobs)
+        update_jobs_with_summaries(summarized_jobs)
     else:
         print("No new jobs found across all platforms.")
 
 
 @app.local_entrypoint()
 def test_jobber():
-    scrape_indeed_jobs.remote()
+    scrape.remote()

@@ -31,6 +31,16 @@ export const fetchJobs = async (): Promise<Job[]> => {
     lastEvaluatedKey = result.LastEvaluatedKey;
   } while (lastEvaluatedKey);
 
+  // Filter jobs to only include those with specific IDs
+  const targetJobIds = [
+    'dice_85a43fea-df01-42e6-9449-f7c82ff3d9d2',
+    'dice_a9dfb117-f96e-4b16-9166-fcfae0661747',
+    'dice_ad552d63-65ee-4b81-a001-205d25dbe08b',
+    'dice_0a16cf4c-8aca-4c78-b181-8a777b352e2e',
+    'indeed_c69bd4df7e1d259d',
+  ];
+  allItems = allItems.filter((job) => targetJobIds.includes(job.id));
+
   return allItems;
 };
 
