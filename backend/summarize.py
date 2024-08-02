@@ -21,7 +21,7 @@ class JobSummaries(BaseModel):
     job_summaries: List[JobSummary] = Field(..., description="List of job summaries")
 
 
-def summarize_job_descriptions(jobs=sample_jobs, batch_size=5):
+def summarize_job_descriptions(jobs=sample_jobs, batch_size=10):
     """
     Summarize job descriptions in batches.
     """

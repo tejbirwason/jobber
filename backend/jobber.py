@@ -3,8 +3,8 @@ from common import app
 from dice.scrape import scrape_dice, scrape_dice_job_descriptions
 from dice.utils import add_jobs, filter_new_jobs
 from dynamodb import update_jobs_with_summaries
-from indeed.scrape import scrape_indeed
 from modal import Image, Period, Secret
+from scrape import scrape_jobspy
 from summarize import summarize_job_descriptions
 from utils import send_telegram_message
 from yc.scrape import scrape_yc, scrape_yc_job_description
@@ -17,7 +17,6 @@ from yc.scrape import scrape_yc, scrape_yc_job_description
     secrets=[Secret.from_name("aws")],
     timeout=1800,
     image=Image.debian_slim().pip_install("boto3"),
-    retries=3,
 )
 def scrape_dice_jobs():
     print("Scraping Dice jobs...")
@@ -29,6 +28,7 @@ def scrape_dice_jobs():
 
     # Remove duplicates before filtering new jobs
     unique_jobs = {job["id"]: job for job in jobs}.values()
+    print(f"Found {len(unique_jobs)} unique jobs")
     new_jobs = filter_new_jobs(unique_jobs)
 
     if new_jobs:
@@ -46,7 +46,6 @@ def scrape_dice_jobs():
     secrets=[Secret.from_name("aws")],
     timeout=1800,
     image=Image.debian_slim().pip_install("boto3", "requests"),
-    retries=3,
 )
 def scrape_yc_jobs():
     print("Scraping YC jobs...")
@@ -75,15 +74,16 @@ def scrape_yc_jobs():
 @app.function(
     secrets=[Secret.from_name("aws")],
     timeout=1800,
-    image=Image.debian_slim().pip_install("boto3", "python-jobspy"),
-    retries=3,
+    image=Image.debian_slim().pip_install("boto3"),
 )
-def scrape_indeed_jobs():
-    print("Scraping Indeed jobs...")
-    jobs = scrape_indeed()
+def scrape_jobspy_jobs():
+    print("Scraping Jobspy jobs...")
+    grouped_jobs = list(scrape_jobspy.map(["linkedin", "indeed", "glassdoor", "zip_recruiter"]))
 
+    jobs = [job for sublist in grouped_jobs for job in sublist]
+    print(f"Total jobs scraped from Jobspy: {len(jobs)}")
     if not jobs:
-        print("No Indeed jobs found during scraping. Done!")
+        print("No Jobspy jobs found during scraping. Done!")
         return
 
     new_jobs = filter_new_jobs(jobs)
@@ -91,10 +91,10 @@ def scrape_indeed_jobs():
     if new_jobs:
         jobs_with_categories = categorize_jobs(new_jobs)
         add_jobs(jobs_with_categories)
-        print("Done scraping Indeed jobs!")
+        print("Done scraping Jobspy jobs!")
         return jobs_with_categories
     else:
-        print("No new Indeed jobs since last scrape. Done!")
+        print("No new Jobspy jobs since last scrape. Done!")
         return []
 
 
@@ -107,9 +107,9 @@ def scrape_indeed_jobs():
 def scrape():
     dice_jobs = scrape_dice_jobs.remote()
     yc_jobs = scrape_yc_jobs.remote()
-    indeed_jobs = scrape_indeed_jobs.remote()
+    jobspy_jobs = scrape_jobspy_jobs.remote()
 
-    all_jobs = dice_jobs + yc_jobs + indeed_jobs
+    all_jobs = dice_jobs + yc_jobs + jobspy_jobs
     if all_jobs:
         send_telegram_message(all_jobs)
         summarized_jobs = summarize_job_descriptions(all_jobs)

@@ -41,6 +41,12 @@ const JobDetails = ({ job, onClose }: JobDetailsProps) => {
       return { name: 'Indeed', color: 'bg-blue-100 text-blue-800' };
     if (job.id.startsWith('yc_'))
       return { name: 'Y Combinator', color: 'bg-orange-100 text-orange-800' };
+    if (job.id.startsWith('linkedin_'))
+      return { name: 'LinkedIn', color: 'bg-sky-100 text-sky-800' };
+    if (job.id.startsWith('glassdoor_'))
+      return { name: 'Glassdoor', color: 'bg-emerald-100 text-emerald-800' };
+    if (job.id.startsWith('zip_recruiter_'))
+      return { name: 'ZipRecruiter', color: 'bg-purple-100 text-purple-800' };
     return { name: 'Unknown', color: 'bg-gray-100 text-gray-800' };
   })();
 
@@ -131,7 +137,7 @@ const JobDetails = ({ job, onClose }: JobDetailsProps) => {
               )}
               <Separator className='my-4' />
               <JobSummary job={job} />
-              {(job.description_html || job.description) && (
+              {(job.description_html || job.description_text) && (
                 <div className='mt-6 pt-4 border-t border-gray-200 flex flex-col flex-grow'>
                   <h3 className='text-lg font-semibold mb-2'>Description</h3>
                   <div className='flex-grow overflow-y-auto text-sm'>
@@ -142,7 +148,7 @@ const JobDetails = ({ job, onClose }: JobDetailsProps) => {
                         }}
                       />
                     ) : (
-                      <p>{job.description}</p>
+                      <p>{job.description_text}</p>
                     )}
                   </div>
                 </div>

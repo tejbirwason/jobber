@@ -82,9 +82,7 @@ async def scrape_company_name(page):
 
 
 async def scrape_location(page):
-    location_element = await page.query_selector(
-        ".company-title .company-details > div:first-child > div"
-    )
+    location_element = await page.query_selector(".company-title .company-details > div:first-child > div")
     if location_element:
         location = await location_element.inner_text()
         return location.replace("", "").strip()
@@ -92,18 +90,12 @@ async def scrape_location(page):
 
 
 async def scrape_description(page):
-    description_elements = await page.query_selector_all(
-        ".bg-beige-lighter > div:not(:first-child)"
-    )
+    description_elements = await page.query_selector_all(".bg-beige-lighter > div:not(:first-child)")
     if description_elements:
-        description_html = "".join(
-            [await elem.inner_html() for elem in description_elements]
-        )
-        description_text = " ".join(
-            [await elem.inner_text() for elem in description_elements]
-        )
+        description_html = "".join([await elem.inner_html() for elem in description_elements])
+        description_text = " ".join([await elem.inner_text() for elem in description_elements])
         return {
             "description_html": description_html,
-            "description_text": description_text[:200] if description_text else None,
+            "description_text": description_text if description_text else None,
         }
     return {"description_html": None, "description_text": None}

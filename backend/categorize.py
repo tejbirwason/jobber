@@ -11,7 +11,7 @@ from utils import litellm_completion, track_cost_callback
 
 
 class JobListing(BaseModel):
-    id: str = Field(..., description="The ID of the job listing")
+    id: str = Field(..., description="The provided ID of the job listing")
     category: str = Field(
         ...,
         description="Category of the job listing",
@@ -23,7 +23,7 @@ class CategorizedListings(BaseModel):
     listings: List[JobListing] = Field(..., description="List of categorized job listings")
 
 
-def categorize_jobs(jobs):
+def categorize_jobs(jobs=sample_jobs):
     """
     Main function to categorize a list of jobs.
     It prepares job listings, calls the batch categorization, and merges results.
@@ -43,10 +43,13 @@ def categorize_jobs(jobs):
 
     categorized_jobs = []
     for listing in response:
-        job = next(job for job in jobs if job["id"] == listing.id)
-        job["category"] = listing.category
-        job["category_explanation"] = listing.explanation
-        categorized_jobs.append(job)
+        try:
+            job = next(job for job in jobs if job["id"] == listing.id)
+            job["category"] = listing.category
+            job["category_explanation"] = listing.explanation
+            categorized_jobs.append(job)
+        except StopIteration:
+            print(f"Warning: No matching job found for listing ID {listing.id}")
 
     print(f"Categorized {len(categorized_jobs)} jobs")
     return categorized_jobs
@@ -109,4 +112,4 @@ def categorize_job_listings(job_listings):
 
 @app.local_entrypoint()
 def main():
-    categorize_jobs_batch()
+    categorize_jobs()

@@ -1,25 +1,35 @@
 from common import app
-from modal import Image, Secret
+from modal import Image
 
 
 @app.function(
-    secrets=[Secret.from_name("aws")],
     timeout=1800,
-    image=Image.debian_slim().pip_install("boto3", "python-jobspy"),
+    image=Image.debian_slim().pip_install("python-jobspy"),
+    retries=3,
 )
-def scrape_jobs(site_name):
+def scrape_jobspy(site_name):
     import pandas as pd
     from jobspy import scrape_jobs
 
-    jobs = scrape_jobs(
-        site_name=[site_name],
-        search_term="software engineer",
-        location="Remote",
-        results_wanted=1000,
-        is_remote=True,
-        hours_old=3,
-        country_indeed="USA",
-    )
+    print(f"Scraping {site_name} jobs...")
+
+    for attempt in range(3):
+        try:
+            jobs = scrape_jobs(
+                site_name=[site_name],
+                search_term="software engineer",
+                location="Remote",
+                results_wanted=1000,
+                is_remote=True,
+                hours_old=3,
+                country_indeed="USA",
+            )
+            break
+        except Exception as e:
+            print(f"Error on attempt {attempt + 1} for {site_name} jobs: {str(e)}")
+            if attempt == 2:
+                print(f"Failed to scrape {site_name} jobs after 3 attempts.")
+                return []
     # ['id', 'site', 'job_url', 'job_url_direct', 'title', 'company',
     #    'location', 'job_type', 'date_posted', 'salary_source', 'interval',
     #    'min_amount', 'max_amount', 'currency', 'is_remote', 'job_level',
@@ -38,5 +48,7 @@ def scrape_jobs(site_name):
             "company_link": job["company_url"] if not pd.isna(job["company_url"]) else "",
             "location": job["location"] if not pd.isna(job["location"]) else "",
         }
+
+    print(f"Scraped {len(jobs)} jobs from {site_name}")
 
     return [extract_job_data(job) for _, job in jobs.iterrows()]

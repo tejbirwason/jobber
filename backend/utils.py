@@ -1,3 +1,6 @@
+from common import app
+from prompts import sample_jobs
+
 TELEGRAM_BOT_TOKEN = "7230321353:AAFJkYp1QvtN77f737ffvuLzdud199oAtxU"
 TELEGRAM_CHAT_ID = "5867217420"
 
@@ -18,7 +21,7 @@ def litellm_completion(model, content, response_model, callback):
     )
 
 
-def send_telegram_message(jobs):
+def send_telegram_message(jobs=sample_jobs):
     import requests
 
     categories = ["Ideal Match", "Strong Potential", "Worth Considering"]
@@ -50,6 +53,12 @@ def send_telegram_message(jobs):
                     if job["id"].startswith("indeed_")
                     else "yc"
                     if job["id"].startswith("yc_")
+                    else "linkedin"
+                    if job["id"].startswith("linkedin_")
+                    else "glassdoor"
+                    if job["id"].startswith("glassdoor_")
+                    else "zip_recruiter"
+                    if job["id"].startswith("zip_recruiter_")
                     else "unknown"
                 )
                 message += f"[{job['title']} - {job['company']} ({job_site})]({job['link']})\n"
@@ -101,3 +110,46 @@ def track_cost_callback(
         print("-" * 40)
     except:
         print("Error occurred while printing LLM response summary")
+
+
+def clear_db(table_name="jobs", region_name="us-east-1"):
+    import boto3
+
+    # Initialize DynamoDB resource
+    dynamodb = boto3.resource(
+        "dynamodb",
+        aws_access_key_id="YOUR_AWS_ACCESS_KEY_ID",
+        aws_secret_access_key="YOUR_AWS_SECRET_ACCESS_KEY",
+        region_name=region_name,
+    )
+    table = dynamodb.Table(table_name)
+
+    # Scan the table to fetch all jobs
+    all_jobs = []
+    last_evaluated_key = None
+
+    while True:
+        if last_evaluated_key:
+            response = table.scan(ExclusiveStartKey=last_evaluated_key)
+        else:
+            response = table.scan()
+
+        all_jobs.extend(response["Items"])
+
+        last_evaluated_key = response.get("LastEvaluatedKey")
+        if not last_evaluated_key:
+            break
+
+    print(f"Total jobs fetched: {len(all_jobs)}")
+
+    # Delete all items from the DynamoDB table
+    with table.batch_writer() as batch:
+        for job in all_jobs:
+            batch.delete_item(Key={"id": job["id"]})
+
+    print(f"Deleted {len(all_jobs)} jobs from the table.")
+
+
+@app.local_entrypoint()
+def test_clear_db():
+    clear_db()

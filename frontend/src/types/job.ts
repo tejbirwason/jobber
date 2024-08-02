@@ -2,7 +2,7 @@ export interface Job {
   id: string;
   timestamp: string;
   company: string;
-  description?: string;
+  description_text?: string;
   description_html?: string;
   company_link?: string;
   company_image?: string;

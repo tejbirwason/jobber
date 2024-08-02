@@ -43,6 +43,19 @@ const JobSummary = ({ job }: { job: Job }) => {
       <div className='grid grid-cols-1 md:grid-cols-3 gap-8'>
         <div className='space-y-6'>
           <SummarySection
+            title='Technology Stack'
+            items={job.technology_stack}
+            icon={<Code className='h-5 w-5' />}
+            columns={2}
+          />
+          <SummarySection
+            title='Requirements'
+            items={job.requirements}
+            icon={<FileText className='h-5 w-5' />}
+          />
+        </div>
+        <div className='space-y-6'>
+          <SummarySection
             title='Team Information'
             items={job.team_information}
             icon={<Users className='h-5 w-5' />}
@@ -55,22 +68,9 @@ const JobSummary = ({ job }: { job: Job }) => {
         </div>
         <div className='space-y-6'>
           <SummarySection
-            title='Technology Stack'
-            items={job.technology_stack}
-            icon={<Code className='h-5 w-5' />}
-            columns={2}
-          />
-          <SummarySection
             title='Key Responsibilities'
             items={job.key_responsibilities}
             icon={<CheckSquare className='h-5 w-5' />}
-          />
-        </div>
-        <div className='space-y-6'>
-          <SummarySection
-            title='Requirements'
-            items={job.requirements}
-            icon={<FileText className='h-5 w-5' />}
           />
           <SummarySection
             title='Exceptional Perks'
