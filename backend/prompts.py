@@ -239,8 +239,8 @@ def get_categorization_prompt(job_listings_json):
     return f"""You are tasked with categorizing job listings based on a specific job requirement profile. Here's the profile and categorization system:
 
 Job Requirement Profile:
-- Ideal Job Title: Senior/Staff/Principal Software Engineer or Technical Lead (Frontend, Backend, or Full Stack)
-- Key Technical Skills: Web development (senior or staff level), Full stack development (senior or staff level), AI or Machine Learning (mid to senior level), LLM (any level)
+- Ideal Job Title: Software Engineer (Mid, Senior, Staff, or Principal) or Technical Lead (Frontend, Backend, or Full Stack)
+- Key Technical Skills: Web or mobile development (mid, senior or staff+ level), Full stack development (mid, senior or staff+ level), AI or Machine Learning (mid to senior level), LLM (any level)
 - Work Arrangement: Fully remote (required)
 - Experience Requirement: At least 5 years of experience (indicative of senior level)
 - Flexible Criteria: No specific requirements for salary, industry, or company size
@@ -249,25 +249,25 @@ Categorization System:
 
 1. Ideal Match:
    - Matches job title (Senior Software Engineer, including frontend/backend/full stack)
-   - Requires senior-level web or full stack development skills
+   - Requires senior-level key technical skills
    - Fully remote
-   - Requires at least 5 years of experience
+   - Requires at least 5 years of experience, or at least mid-level experience
 
 2. Strong Potential:
    - Similar job title (e.g., Lead Developer, Software Architect)
-   - Requires senior-level development skills
+   - Requires senior-level key technical skills
    - Fully remote
-   - Requires at least 5 years of experience
+   - Requires at least 5 years of experience, or at least mid-level experience
 
 3. Worth Considering:
    - Related job title
-   - Requires web or full stack development skills or AI/ML skills (not necessarily senior level)
+   - Requires key technical skills (not necessarily senior level)
    - Fully remote
    - May not explicitly state 5 years of experience, but implies senior-level experience
 
 4. Not Suitable:
    - Unrelated job title
-   - Does not require web or full stack development skills
+   - Does not require listed key technical skills
    - Not fully remote
    - Requires less than 5 years of experience or entry-level position
 

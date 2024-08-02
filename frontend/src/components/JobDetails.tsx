@@ -2,7 +2,15 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Briefcase, Clock, MapPin, Calendar, ExternalLink } from 'lucide-react';
+import {
+  Briefcase,
+  Clock,
+  MapPin,
+  Calendar,
+  ExternalLink,
+  ChevronDown,
+  ChevronUp,
+} from 'lucide-react';
 import { Job } from '@/types/job';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import JobSummary from '@/components/JobSummary';
@@ -22,6 +30,7 @@ interface JobDetailsProps {
 
 const JobDetails = ({ job, onClose }: JobDetailsProps) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
 
   useEffect(() => {
     setIsOpen(!!job);
@@ -54,7 +63,7 @@ const JobDetails = ({ job, onClose }: JobDetailsProps) => {
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogContent className='w-full max-w-5xl h-[80vh]' noAnimation>
         <Card className='w-full h-full overflow-auto'>
-          <CardHeader className='pb-2'>
+          <CardHeader className='pb-4 px-6'>
             <div className='flex justify-between items-start'>
               <div className='flex items-center'>
                 <CardTitle className='text-xl font-bold'>{job.title}</CardTitle>
@@ -106,9 +115,9 @@ const JobDetails = ({ job, onClose }: JobDetailsProps) => {
               </div>
             </div>
           </CardHeader>
-          <CardContent>
-            <div className='space-y-4 text-sm'>
-              <div className='grid grid-cols-2 gap-2'>
+          <CardContent className='px-6 py-4'>
+            <div className='space-y-6 text-sm'>
+              <div className='grid grid-cols-2 gap-4'>
                 <div className='flex items-center space-x-2'>
                   <Briefcase className='h-4 w-4' />
                   <span className='font-semibold'>{job.company}</span>
@@ -131,26 +140,41 @@ const JobDetails = ({ job, onClose }: JobDetailsProps) => {
                 </div>
               </div>
               {job.employment_type && (
-                <Badge variant='secondary' className='mt-1'>
+                <Badge variant='secondary' className='mt-2'>
                   {job.employment_type}
                 </Badge>
               )}
-              <Separator className='my-4' />
+              <Separator className='my-6' />
               <JobSummary job={job} />
               {(job.description_html || job.description_text) && (
-                <div className='mt-6 pt-4 border-t border-gray-200 flex flex-col flex-grow'>
-                  <h3 className='text-lg font-semibold mb-2'>Description</h3>
-                  <div className='flex-grow overflow-y-auto text-sm'>
-                    {job.description_html ? (
-                      <div
-                        dangerouslySetInnerHTML={{
-                          __html: job.description_html,
-                        }}
-                      />
+                <div className='mt-8 pt-6 border-t border-gray-200'>
+                  <Button
+                    variant='ghost'
+                    onClick={() =>
+                      setIsDescriptionExpanded(!isDescriptionExpanded)
+                    }
+                    className='w-full flex justify-between items-center'
+                  >
+                    <h3 className='text-lg font-semibold'>Description</h3>
+                    {isDescriptionExpanded ? (
+                      <ChevronUp className='h-4 w-4' />
                     ) : (
-                      <p>{job.description_text}</p>
+                      <ChevronDown className='h-4 w-4' />
                     )}
-                  </div>
+                  </Button>
+                  {isDescriptionExpanded && (
+                    <div className='mt-4 text-sm'>
+                      {job.description_html ? (
+                        <div
+                          dangerouslySetInnerHTML={{
+                            __html: job.description_html,
+                          }}
+                        />
+                      ) : (
+                        <p>{job.description_text}</p>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
             </div>

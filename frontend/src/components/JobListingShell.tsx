@@ -39,6 +39,7 @@ const JobListingShell: React.FC = () => {
   };
 
   const categories = [
+    'Not Suitable',
     'Worth Considering',
     'Strong Potential',
     'Ideal Match',
@@ -88,55 +89,58 @@ const JobListingShell: React.FC = () => {
       </div>
     );
   }
-
   // TODO: Drag and drop not working
 
   return (
     <div className='flex h-screen'>
       <DragDropContext onDragEnd={onDragEnd}>
         <div className='flex-grow flex overflow-x-auto'>
-          {categories.map((category) => (
-            <div key={category} className='flex-shrink-0 w-64 p-2'>
-              <h2 className='font-bold mb-2'>
-                {category} ({jobsByCategory[category]?.length || 0})
-              </h2>
-              <Droppable droppableId={category}>
-                {(provided) => (
-                  <div
-                    {...provided.droppableProps}
-                    ref={provided.innerRef}
-                    className='bg-gray-100 p-2 rounded min-h-[200px]'
-                  >
-                    {(jobsByCategory[category] || []).map((job, index) => (
-                      <Draggable
-                        key={job.id}
-                        draggableId={job.id}
-                        index={index}
-                      >
-                        {(provided, snapshot) => (
-                          <div
-                            ref={provided.innerRef}
-                            {...provided.draggableProps}
-                            {...provided.dragHandleProps}
-                            className={`mb-2 ${
-                              snapshot.isDragging ? 'opacity-50' : ''
-                            }`}
-                          >
-                            <JobListingItem
-                              job={job}
-                              isSelected={job.id === selectedJob?.id}
-                              onSelect={() => handleJobSelect(job)}
-                            />
-                          </div>
-                        )}
-                      </Draggable>
-                    ))}
-                    {provided.placeholder}
-                  </div>
-                )}
-              </Droppable>
-            </div>
-          ))}
+          {categories.map((category) => {
+            const categoryJobs = jobsByCategory[category] || [];
+            const unseenJobs = categoryJobs.filter((job) => !job.seen).length;
+            return (
+              <div key={category} className='flex-shrink-0 w-64 p-2'>
+                <h2 className='font-bold mb-2'>
+                  {category} ({unseenJobs})
+                </h2>
+                <Droppable droppableId={category}>
+                  {(provided) => (
+                    <div
+                      {...provided.droppableProps}
+                      ref={provided.innerRef}
+                      className='bg-gray-100 p-2 rounded min-h-[200px]'
+                    >
+                      {categoryJobs.map((job, index) => (
+                        <Draggable
+                          key={job.id}
+                          draggableId={job.id}
+                          index={index}
+                        >
+                          {(provided, snapshot) => (
+                            <div
+                              ref={provided.innerRef}
+                              {...provided.draggableProps}
+                              {...provided.dragHandleProps}
+                              className={`mb-2 ${
+                                snapshot.isDragging ? 'opacity-50' : ''
+                              }`}
+                            >
+                              <JobListingItem
+                                job={job}
+                                isSelected={job.id === selectedJob?.id}
+                                onSelect={() => handleJobSelect(job)}
+                              />
+                            </div>
+                          )}
+                        </Draggable>
+                      ))}
+                      {provided.placeholder}
+                    </div>
+                  )}
+                </Droppable>
+              </div>
+            );
+          })}
         </div>
       </DragDropContext>
 
