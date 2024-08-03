@@ -10,6 +10,7 @@ import {
   ExternalLink,
   ChevronDown,
   ChevronUp,
+  Star,
 } from 'lucide-react';
 import { Job } from '@/types/job';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
@@ -22,15 +23,92 @@ import {
 } from '@/components/ui/tooltip';
 import { HelpCircle } from 'lucide-react';
 import { Separator } from './ui/separator';
+import { updateJobCategory } from '@/db';
 
 interface JobDetailsProps {
   job: Job | null;
   onClose: () => void;
 }
 
+const JobActionButtons = ({ job }: { job: Job }) => {
+  const handleInterested = async () => {
+    try {
+      await updateJobCategory(job.id, 'Interested');
+      // You might want to add some state update or notification here
+    } catch (error) {
+      console.error('Failed to update job category:', error);
+    }
+  };
+
+  return (
+    <div className='flex space-x-2'>
+      {job.link && (
+        <a href={job.link} target='_blank' rel='noopener noreferrer'>
+          <Button size='sm' variant='outline'>
+            <ExternalLink className='h-4 w-4 mr-1' />
+            View Job
+          </Button>
+        </a>
+      )}
+      {job.company_link && (
+        <a href={job.company_link} target='_blank' rel='noopener noreferrer'>
+          <Button size='sm' variant='outline'>
+            <ExternalLink className='h-4 w-4 mr-1' />
+            View {job.company}
+          </Button>
+        </a>
+      )}
+      <Button size='sm' variant='outline' onClick={handleInterested}>
+        <Star
+          className={`h-4 w-4 mr-1 ${
+            job.category === 'Interested' ? 'text-yellow-400' : ''
+          }`}
+        />
+        Interested
+      </Button>
+    </div>
+  );
+};
+
+const JobDescription = ({ job }: { job: Job }) => {
+  const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
+
+  if (!job.description_html && !job.description_text) return null;
+
+  return (
+    <div className='mt-8 pt-6 border-t border-gray-200'>
+      <Button
+        variant='ghost'
+        onClick={() => setIsDescriptionExpanded(!isDescriptionExpanded)}
+        className='w-full flex justify-between items-center'
+      >
+        <h3 className='text-lg font-semibold'>Description</h3>
+        {isDescriptionExpanded ? (
+          <ChevronUp className='h-4 w-4' />
+        ) : (
+          <ChevronDown className='h-4 w-4' />
+        )}
+      </Button>
+      {isDescriptionExpanded && (
+        <div className='mt-4 text-sm'>
+          {job.description_html ? (
+            <div
+              dangerouslySetInnerHTML={{
+                __html: job.description_html,
+              }}
+            />
+          ) : (
+            <p>{job.description_text}</p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
 const JobDetails = ({ job, onClose }: JobDetailsProps) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
+  const [isTooltipOpen, setIsTooltipOpen] = useState(false);
 
   useEffect(() => {
     setIsOpen(!!job);
@@ -72,9 +150,16 @@ const JobDetails = ({ job, onClose }: JobDetailsProps) => {
                 </Badge>
                 {job.category_explanation && (
                   <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger>
-                        <HelpCircle className='h-4 w-4 ml-2 text-gray-400' />
+                    <Tooltip
+                      open={isTooltipOpen}
+                      onOpenChange={setIsTooltipOpen}
+                    >
+                      <TooltipTrigger asChild>
+                        <HelpCircle
+                          className='h-4 w-4 ml-2 text-gray-400 cursor-pointer'
+                          onMouseEnter={() => setIsTooltipOpen(true)}
+                          onMouseLeave={() => setIsTooltipOpen(false)}
+                        />
                       </TooltipTrigger>
                       <TooltipContent>
                         {Array.isArray(job.category_explanation) ? (
@@ -91,28 +176,7 @@ const JobDetails = ({ job, onClose }: JobDetailsProps) => {
                   </TooltipProvider>
                 )}
               </div>
-              <div className='flex space-x-2'>
-                {job.link && (
-                  <a href={job.link} target='_blank' rel='noopener noreferrer'>
-                    <Button size='sm' variant='outline'>
-                      <ExternalLink className='h-4 w-4 mr-1' />
-                      View Job
-                    </Button>
-                  </a>
-                )}
-                {job.company_link && (
-                  <a
-                    href={job.company_link}
-                    target='_blank'
-                    rel='noopener noreferrer'
-                  >
-                    <Button size='sm' variant='outline'>
-                      <ExternalLink className='h-4 w-4 mr-1' />
-                      View {job.company}
-                    </Button>
-                  </a>
-                )}
-              </div>
+              <JobActionButtons job={job} />
             </div>
           </CardHeader>
           <CardContent className='px-6 py-4'>
@@ -123,14 +187,14 @@ const JobDetails = ({ job, onClose }: JobDetailsProps) => {
                   <span className='font-semibold'>{job.company}</span>
                 </div>
                 <div className='flex items-center space-x-2'>
-                  <MapPin className='h-4 w-4' />
-                  <span>{job.location}</span>
-                </div>
-                <div className='flex items-center space-x-2'>
                   <Calendar className='h-4 w-4' />
                   <span>
                     Posted: {new Date(job.date_posted).toLocaleDateString()}
                   </span>
+                </div>
+                <div className='flex items-center space-x-2'>
+                  <MapPin className='h-4 w-4' />
+                  <span>{job.location}</span>
                 </div>
                 <div className='flex items-center space-x-2'>
                   <Clock className='h-4 w-4' />
@@ -146,37 +210,7 @@ const JobDetails = ({ job, onClose }: JobDetailsProps) => {
               )}
               <Separator className='my-6' />
               <JobSummary job={job} />
-              {(job.description_html || job.description_text) && (
-                <div className='mt-8 pt-6 border-t border-gray-200'>
-                  <Button
-                    variant='ghost'
-                    onClick={() =>
-                      setIsDescriptionExpanded(!isDescriptionExpanded)
-                    }
-                    className='w-full flex justify-between items-center'
-                  >
-                    <h3 className='text-lg font-semibold'>Description</h3>
-                    {isDescriptionExpanded ? (
-                      <ChevronUp className='h-4 w-4' />
-                    ) : (
-                      <ChevronDown className='h-4 w-4' />
-                    )}
-                  </Button>
-                  {isDescriptionExpanded && (
-                    <div className='mt-4 text-sm'>
-                      {job.description_html ? (
-                        <div
-                          dangerouslySetInnerHTML={{
-                            __html: job.description_html,
-                          }}
-                        />
-                      ) : (
-                        <p>{job.description_text}</p>
-                      )}
-                    </div>
-                  )}
-                </div>
-              )}
+              <JobDescription job={job} />
             </div>
           </CardContent>
         </Card>

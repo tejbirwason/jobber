@@ -90,6 +90,10 @@ const JobListingShell: React.FC = () => {
     );
   }
   // TODO: Drag and drop not working
+  console.log(
+    'Jobs data:',
+    jobs.map((job) => ({ id: job.id, title: job.title }))
+  );
 
   return (
     <div className='flex h-screen'>
