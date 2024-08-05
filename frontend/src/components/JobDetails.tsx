@@ -7,10 +7,8 @@ import {
   Clock,
   MapPin,
   Calendar,
-  ExternalLink,
   ChevronDown,
   ChevronUp,
-  Star,
 } from 'lucide-react';
 import { Job } from '@/types/job';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
@@ -23,52 +21,12 @@ import {
 } from '@/components/ui/tooltip';
 import { HelpCircle } from 'lucide-react';
 import { Separator } from './ui/separator';
-import { updateJobCategory } from '@/db';
+import JobActions from './JobActions';
 
 interface JobDetailsProps {
   job: Job | null;
   onClose: () => void;
 }
-
-const JobActionButtons = ({ job }: { job: Job }) => {
-  const handleInterested = async () => {
-    try {
-      await updateJobCategory(job.id, 'Interested');
-      // You might want to add some state update or notification here
-    } catch (error) {
-      console.error('Failed to update job category:', error);
-    }
-  };
-
-  return (
-    <div className='flex space-x-2'>
-      {job.link && (
-        <a href={job.link} target='_blank' rel='noopener noreferrer'>
-          <Button size='sm' variant='outline'>
-            <ExternalLink className='h-4 w-4 mr-1' />
-            View Job
-          </Button>
-        </a>
-      )}
-      {job.company_link && (
-        <a href={job.company_link} target='_blank' rel='noopener noreferrer'>
-          <Button size='sm' variant='outline'>
-            <ExternalLink className='h-4 w-4 mr-1' />
-            View {job.company}
-          </Button>
-        </a>
-      )}
-      <Button size='sm' variant='outline' onClick={handleInterested}>
-        <Star
-          className={`h-4 w-4 mr-1 ${
-            job.category === 'Interested' ? 'text-yellow-400' : ''
-          }`}
-        />
-        Interested
-      </Button>
-    </div>
-  );
-};
 
 const JobDescription = ({ job }: { job: Job }) => {
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
@@ -176,7 +134,7 @@ const JobDetails = ({ job, onClose }: JobDetailsProps) => {
                   </TooltipProvider>
                 )}
               </div>
-              <JobActionButtons job={job} />
+              <JobActions job={job} />
             </div>
           </CardHeader>
           <CardContent className='px-6 py-4'>

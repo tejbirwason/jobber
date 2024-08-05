@@ -23,6 +23,7 @@ def scrape_jobspy(site_name):
                 is_remote=True,
                 hours_old=3,
                 country_indeed="USA",
+                linkedin_fetch_description=True,
             )
             break
         except Exception as e:
@@ -30,6 +31,7 @@ def scrape_jobspy(site_name):
             if attempt == 2:
                 print(f"Failed to scrape {site_name} jobs after 3 attempts.")
                 return []
+
     # ['id', 'site', 'job_url', 'job_url_direct', 'title', 'company',
     #    'location', 'job_type', 'date_posted', 'salary_source', 'interval',
     #    'min_amount', 'max_amount', 'currency', 'is_remote', 'job_level',
@@ -37,7 +39,6 @@ def scrape_jobspy(site_name):
     #    'description', 'company_url', 'company_url_direct', 'company_addresses',
     #    'company_num_employees', 'company_revenue', 'company_description',
     #    'logo_photo_url', 'banner_photo_url', 'ceo_name', 'ceo_photo_url']
-
     def extract_job_data(job):
         return {
             "id": f"{site_name}_{job['id']}",
@@ -45,6 +46,7 @@ def scrape_jobspy(site_name):
             "company": job["company"] if not pd.isna(job["company"]) else "",
             "description_text": job["description"] if not pd.isna(job["description"]) else "",
             "link": job["job_url"] if not pd.isna(job["job_url"]) else "",
+            "direct_link": job["job_url_direct"] if not pd.isna(job["job_url_direct"]) else "",
             "company_link": job["company_url"] if not pd.isna(job["company_url"]) else "",
             "location": job["location"] if not pd.isna(job["location"]) else "",
         }
@@ -52,3 +54,8 @@ def scrape_jobspy(site_name):
     print(f"Scraped {len(jobs)} jobs from {site_name}")
 
     return [extract_job_data(job) for _, job in jobs.iterrows()]
+
+
+@app.local_entrypoint()
+def test_scrape_jobspy():
+    scrape_jobspy.remote("linkedin")

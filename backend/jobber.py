@@ -88,6 +88,16 @@ def scrape_jobspy_jobs():
 
     new_jobs = filter_new_jobs(jobs)
 
+    linkedin_jobs_without_description = [
+        job
+        for job in new_jobs
+        if job["id"].startswith("linkedin_") and (not job.get("description_text") or job["description_text"] == "")
+    ]
+
+    print("LinkedIn jobs without description:")
+    for job in linkedin_jobs_without_description:
+        print(f"Title: {job['title']}, Company: {job['company']}, Link: {job['link']}")
+
     if new_jobs:
         jobs_with_categories = categorize_jobs(new_jobs)
         add_jobs(jobs_with_categories)
@@ -120,4 +130,4 @@ def scrape():
 
 @app.local_entrypoint()
 def test_jobber():
-    scrape.remote()
+    scrape_jobspy_jobs.remote()

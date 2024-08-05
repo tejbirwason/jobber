@@ -1,4 +1,5 @@
 from common import app
+from modal import Image, Secret
 from prompts import sample_jobs
 
 TELEGRAM_BOT_TOKEN = "7230321353:AAFJkYp1QvtN77f737ffvuLzdud199oAtxU"
@@ -112,14 +113,21 @@ def track_cost_callback(
         print("Error occurred while printing LLM response summary")
 
 
+@app.function(
+    secrets=[Secret.from_name("aws")],
+    timeout=1800,
+    image=Image.debian_slim().pip_install("boto3"),
+)
 def clear_db(table_name="jobs", region_name="us-east-1"):
+    import os
+
     import boto3
 
     # Initialize DynamoDB resource
     dynamodb = boto3.resource(
         "dynamodb",
-        aws_access_key_id="YOUR_AWS_ACCESS_KEY_ID",
-        aws_secret_access_key="YOUR_AWS_SECRET_ACCESS_KEY",
+        aws_access_key_id=os.environ["AWS_ACCESS_KEY_ID"],
+        aws_secret_access_key=os.environ["AWS_SECRET_ACCESS_KEY"],
         region_name=region_name,
     )
     table = dynamodb.Table(table_name)
@@ -152,4 +160,4 @@ def clear_db(table_name="jobs", region_name="us-east-1"):
 
 @app.local_entrypoint()
 def test_clear_db():
-    clear_db()
+    clear_db.remote()

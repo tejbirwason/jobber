@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 import JobListingShell from './components/JobListingShell';
+import { Toaster } from './components/ui/toaster';
 
 const NotFound: React.FC = () => {
   return (
@@ -38,6 +39,7 @@ const App: React.FC = () => {
             </Routes>
           </main>
         </div>
+        <Toaster />
       </Router>
     </QueryClientProvider>
   );
