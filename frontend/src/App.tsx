@@ -1,11 +1,5 @@
 import React from 'react';
-import {
-  BrowserRouter as Router,
-  Routes,
-  Route,
-  Link,
-  Navigate,
-} from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
@@ -17,8 +11,8 @@ const NotFound: React.FC = () => {
     <div className='flex flex-col items-center justify-center h-full'>
       <h1 className='text-4xl font-bold mb-4'>404 - Page Not Found</h1>
       <p className='text-xl mb-8'>The page you're looking for doesn't exist.</p>
-      <Link to='/jobs'>
-        <Button variant='default'>Go to Jobs</Button>
+      <Link to='/'>
+        <Button variant='default'>Go to Home</Button>
       </Link>
     </div>
   );
@@ -33,8 +27,7 @@ const App: React.FC = () => {
         <div className='min-h-screen flex flex-col'>
           <main className='flex-grow'>
             <Routes>
-              <Route path='/' element={<Navigate to='/jobs' replace />} />
-              <Route path='/jobs' element={<JobListingShell />} />
+              <Route path='/' element={<JobListingShell />} />
               <Route path='*' element={<NotFound />} />
             </Routes>
           </main>

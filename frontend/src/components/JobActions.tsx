@@ -3,6 +3,7 @@ import { ExternalLink, ThumbsDown, ThumbsUp } from 'lucide-react';
 import { Job } from '@/types/job';
 import { updateJobCategory } from '@/db';
 import { useToast } from '@/components/ui/use-toast';
+import { getJobSource } from '@/lib/utils';
 
 interface JobActionsProps {
   job: Job;
@@ -10,6 +11,8 @@ interface JobActionsProps {
 
 const JobActions = ({ job }: JobActionsProps) => {
   const { toast } = useToast();
+
+  const jobSource = getJobSource(job.id);
 
   const handleInterested = async () => {
     try {
@@ -51,7 +54,7 @@ const JobActions = ({ job }: JobActionsProps) => {
         <a href={job.link} target='_blank' rel='noopener noreferrer'>
           <Button size='sm' variant='outline'>
             <ExternalLink className='h-4 w-4 mr-1' />
-            View Job
+            {jobSource.name}
           </Button>
         </a>
       )}
@@ -59,7 +62,7 @@ const JobActions = ({ job }: JobActionsProps) => {
         <a href={job.company_link} target='_blank' rel='noopener noreferrer'>
           <Button size='sm' variant='outline'>
             <ExternalLink className='h-4 w-4 mr-1' />
-            View {job.company}
+            {job.company}
           </Button>
         </a>
       )}

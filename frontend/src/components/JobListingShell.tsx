@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
   DragDropContext,
@@ -7,11 +7,14 @@ import {
   DropResult,
 } from 'react-beautiful-dnd';
 import { Loader2 } from 'lucide-react';
+import { FixedSizeList as List } from 'react-window';
+import AutoSizer from 'react-virtualized-auto-sizer';
 
 import JobListingItem from './JobListingItem';
 import { Job } from '@/types/job';
 import { fetchJobs, updateJobCategory } from '@/db';
 import JobDetails from './JobDetails';
+import { debounce } from '@/lib/utils';
 
 const JobListingShell: React.FC = () => {
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
@@ -23,20 +26,25 @@ const JobListingShell: React.FC = () => {
   } = useQuery({
     queryKey: ['jobs'],
     queryFn: fetchJobs,
-    refetchInterval: 5 * 60 * 1000, // Refetch every 5 minutes
+    refetchInterval: 5 * 60 * 1000,
   });
 
-  const sortedJobs = [...jobs].sort(
-    (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+  const sortedJobs = useMemo(
+    () =>
+      [...jobs].sort(
+        (a, b) =>
+          new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+      ),
+    [jobs]
   );
 
-  const handleJobSelect = (job: Job) => {
+  const handleJobSelect = useCallback((job: Job) => {
     setSelectedJob(job);
-  };
+  }, []);
 
-  const handleCloseModal = () => {
+  const handleCloseModal = useCallback(() => {
     setSelectedJob(null);
-  };
+  }, []);
 
   const categories = [
     'Not Interested',
@@ -56,32 +64,38 @@ const JobListingShell: React.FC = () => {
     }, {} as Record<string, Job[]>);
   }, [sortedJobs]);
 
-  const onDragEnd = async (result: DropResult) => {
-    const { destination, source, draggableId } = result;
+  const debouncedUpdateJobCategory = useCallback(
+    debounce(async (jobId: string, newCategory: string) => {
+      try {
+        await updateJobCategory(jobId, newCategory);
+        refetch();
+      } catch (error) {
+        console.error('Failed to update job category:', error);
+      }
+    }, 500),
+    [refetch]
+  );
 
-    if (!destination) {
-      return;
-    }
+  const onDragEnd = useCallback(
+    (result: DropResult) => {
+      const { destination, source, draggableId } = result;
 
-    if (
-      destination.droppableId === source.droppableId &&
-      destination.index === source.index
-    ) {
-      return;
-    }
+      if (
+        !destination ||
+        (destination.droppableId === source.droppableId &&
+          destination.index === source.index)
+      ) {
+        return;
+      }
 
-    const job = sortedJobs.find((j) => j.id === draggableId);
-    if (!job) return;
+      const job = sortedJobs.find((j) => j.id === draggableId);
+      if (!job) return;
 
-    const newCategory = destination.droppableId;
-
-    try {
-      await updateJobCategory(job.id, newCategory);
-      refetch();
-    } catch (error) {
-      console.error('Failed to update job category:', error);
-    }
-  };
+      const newCategory = destination.droppableId;
+      debouncedUpdateJobCategory(job.id, newCategory);
+    },
+    [sortedJobs, debouncedUpdateJobCategory]
+  );
 
   if (isLoading) {
     return (
@@ -90,17 +104,50 @@ const JobListingShell: React.FC = () => {
       </div>
     );
   }
-  // TODO: Drag and drop not working
+
+  const renderJob = ({
+    index,
+    style,
+    data: category,
+  }: {
+    index: number;
+    style: React.CSSProperties;
+    data: string;
+  }) => {
+    const job = jobsByCategory[category][index];
+    return (
+      <Draggable key={job.id} draggableId={job.id} index={index}>
+        {(provided, snapshot) => (
+          <div
+            ref={provided.innerRef}
+            {...provided.draggableProps}
+            {...provided.dragHandleProps}
+            style={{ ...style, ...provided.draggableProps.style }}
+            className={`mb-2 ${snapshot.isDragging ? 'opacity-50' : ''}`}
+          >
+            <JobListingItem
+              job={job}
+              isSelected={job.id === selectedJob?.id}
+              onSelect={() => handleJobSelect(job)}
+            />
+          </div>
+        )}
+      </Draggable>
+    );
+  };
 
   return (
     <div className='flex h-screen'>
       <DragDropContext onDragEnd={onDragEnd}>
-        <div className='flex-grow flex overflow-x-auto'>
+        <div className='flex'>
           {categories.map((category) => {
             const categoryJobs = jobsByCategory[category] || [];
             const unseenJobs = categoryJobs.filter((job) => !job.seen).length;
             return (
-              <div key={category} className='flex-shrink-0 w-64 p-2'>
+              <div
+                key={category}
+                className='flex-shrink-0 w-80 min-w-[20rem] p-2'
+              >
                 <h2 className='font-bold mb-2'>
                   {category} ({unseenJobs})
                 </h2>
@@ -109,32 +156,21 @@ const JobListingShell: React.FC = () => {
                     <div
                       {...provided.droppableProps}
                       ref={provided.innerRef}
-                      className='bg-gray-100 p-2 rounded min-h-[200px]'
+                      className='p-2 rounded min-h-[200px] h-[calc(100vh-100px)]'
                     >
-                      {categoryJobs.map((job, index) => (
-                        <Draggable
-                          key={job.id}
-                          draggableId={job.id}
-                          index={index}
-                        >
-                          {(provided, snapshot) => (
-                            <div
-                              ref={provided.innerRef}
-                              {...provided.draggableProps}
-                              {...provided.dragHandleProps}
-                              className={`mb-2 ${
-                                snapshot.isDragging ? 'opacity-50' : ''
-                              }`}
-                            >
-                              <JobListingItem
-                                job={job}
-                                isSelected={job.id === selectedJob?.id}
-                                onSelect={() => handleJobSelect(job)}
-                              />
-                            </div>
-                          )}
-                        </Draggable>
-                      ))}
+                      <AutoSizer disableHeight>
+                        {({ width }) => (
+                          <List
+                            height={window.innerHeight - 100}
+                            itemCount={categoryJobs.length}
+                            itemSize={100}
+                            width={width}
+                            itemData={category}
+                          >
+                            {renderJob}
+                          </List>
+                        )}
+                      </AutoSizer>
                       {provided.placeholder}
                     </div>
                   )}

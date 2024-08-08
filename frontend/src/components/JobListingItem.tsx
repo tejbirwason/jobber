@@ -39,7 +39,7 @@ const JobListingItem: React.FC<JobListingItemProps> = ({
 
   return (
     <div
-      className={`p-3 bg-white rounded-lg shadow-sm cursor-pointer relative ${
+      className={`p-3 bg-gray-50 rounded-lg shadow-md cursor-pointer relative ${
         isSelected ? 'ring-2 ring-primary' : ''
       } ${isHovered ? 'ring-2 ring-blue-300' : ''}`}
       onClick={handleClick}

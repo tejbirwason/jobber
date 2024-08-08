@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -22,6 +22,7 @@ import {
 import { HelpCircle } from 'lucide-react';
 import { Separator } from './ui/separator';
 import JobActions from './JobActions';
+import { getJobSource } from '@/lib/utils';
 
 interface JobDetailsProps {
   job: Job | null;
@@ -77,23 +78,12 @@ const JobDetails = ({ job, onClose }: JobDetailsProps) => {
     if (!open) onClose();
   };
 
-  if (!job) return null;
+  const jobSource = useMemo(
+    () => (job ? getJobSource(job?.id) : null),
+    [job?.id]
+  );
 
-  const jobSource = (() => {
-    if (job.id.startsWith('dice_'))
-      return { name: 'Dice', color: 'bg-green-100 text-green-800' };
-    if (job.id.startsWith('indeed_'))
-      return { name: 'Indeed', color: 'bg-blue-100 text-blue-800' };
-    if (job.id.startsWith('yc_'))
-      return { name: 'Y Combinator', color: 'bg-orange-100 text-orange-800' };
-    if (job.id.startsWith('linkedin_'))
-      return { name: 'LinkedIn', color: 'bg-sky-100 text-sky-800' };
-    if (job.id.startsWith('glassdoor_'))
-      return { name: 'Glassdoor', color: 'bg-emerald-100 text-emerald-800' };
-    if (job.id.startsWith('zip_recruiter_'))
-      return { name: 'ZipRecruiter', color: 'bg-purple-100 text-purple-800' };
-    return { name: 'Unknown', color: 'bg-gray-100 text-gray-800' };
-  })();
+  if (!job) return null;
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
@@ -104,7 +94,7 @@ const JobDetails = ({ job, onClose }: JobDetailsProps) => {
               <div className='flex items-center'>
                 <CardTitle className='text-xl font-bold'>{job.title}</CardTitle>
                 <Badge variant='outline' className={`ml-2 ${jobSource.color}`}>
-                  {jobSource.name}
+                  {jobSource?.name}
                 </Badge>
                 {job.category_explanation && (
                   <TooltipProvider>
