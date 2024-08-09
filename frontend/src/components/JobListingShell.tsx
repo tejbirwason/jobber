@@ -47,7 +47,7 @@ const JobListingShell: React.FC = () => {
   }, []);
 
   const categories = [
-    'Not Interested',
+    // 'Not Interested',
     'Not Suitable',
     'Worth Considering',
     'Strong Potential',
