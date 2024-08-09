@@ -1,12 +1,13 @@
 from categorize import categorize_jobs
 from common import app
+from company import enrich_company_info
 from dice.scrape import scrape_dice, scrape_dice_job_descriptions
 from dice.utils import add_jobs, filter_new_jobs
 from dynamodb import update_jobs_with_summaries
 from modal import Image, Period, Secret
 from scrape import scrape_jobspy
 from summarize import summarize_job_descriptions
-from utils import send_telegram_message
+from utils import link_jobs_to_companies, send_telegram_message
 from yc.scrape import scrape_yc, scrape_yc_job_description
 
 # ALWAYS BE APPLYING !!!
@@ -124,6 +125,9 @@ def scrape():
         send_telegram_message(all_jobs)
         summarized_jobs = summarize_job_descriptions(all_jobs)
         update_jobs_with_summaries(summarized_jobs)
+
+        enrich_company_info.remote(all_jobs)
+        link_jobs_to_companies(all_jobs)
     else:
         print("No new jobs found across all platforms.")
 

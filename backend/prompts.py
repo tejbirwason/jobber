@@ -348,3 +348,62 @@ Here are the job descriptions to analyze:
 
 {job_listings_json}
 """
+
+
+def get_company_description_prompt(jina_ai_results):
+    return f"""Given a company description, please extract and organize the following information in a structured format. If any information is not available, skip that category.
+            
+            Company Overview:
+            Full name: [Official company name]
+            Industry: [Main industry sectors]
+            Headquarters: [City, State/Province, Country]
+            Founded: [Year]
+            Company type: [e.g., Public, Private, Subsidiary]
+            Number of employees: [Employee range or exact number if available]
+
+            Key Links:
+            [Official website]
+            [LinkedIn profile]
+            [Social media profiles]
+            [Other relevant online resources]
+
+            Business Description:
+            [Brief overview of main business activities]
+            [Key products or services]
+            [Target customers or market]
+            [Unique selling points or competitive advantages]
+
+            Products/Services:
+            [List main products or services offered]
+
+            Key Locations:
+            Headquarters: [Location]
+            [Other significant office locations]
+
+            History:
+            [Key milestones, including founding date]
+            [Major acquisitions or mergers]
+            [Significant rebranding or restructuring events]
+
+            Financials:
+            Total funding raised: [Amount if available]
+            Last funding round: [Type and date of most recent funding]
+            [Any other relevant financial information]
+
+            Leadership:
+            CEO: [Name of current CEO]
+            [Other key executive positions and names]
+
+            Technology:
+            [Key technologies used or developed by the company]
+            [Digital platforms or apps]
+
+            Corporate Culture:
+            [Company's self-description of culture]
+            [Key values or focus areas]
+
+
+            Please organize the information clearly and concisely, using bullet points where appropriate. If certain information is not provided in the company description, mention that the detail should not be scraped.
+
+            {jina_ai_results}
+    """

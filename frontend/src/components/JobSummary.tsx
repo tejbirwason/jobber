@@ -1,5 +1,4 @@
 import { Job } from '@/types/job';
-import React from 'react';
 import {
   Users,
   Package,
@@ -8,34 +7,9 @@ import {
   FileText,
   Star,
 } from 'lucide-react';
-
-const SummarySection: React.FC<{
-  title: string;
-  items?: string[];
-  icon: React.ReactNode;
-  columns?: number;
-}> = ({ title, items, icon, columns = 1 }) => {
-  if (!items || items.length === 0) return null;
-  return (
-    <div className='mb-4'>
-      <h4 className='font-semibold text-gray-700 mb-2 flex items-center'>
-        {icon}
-        <span className='ml-2'>{title}</span>
-      </h4>
-      <ul
-        className={`list-disc pl-5 space-y-1 ${
-          columns === 2 ? 'columns-2' : ''
-        }`}
-      >
-        {items.map((item, index) => (
-          <li key={index} className='text-gray-600'>
-            {item}
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-};
+import { SummarySection } from '@/helpers/SummarySection';
+import CompanyDetails from './CompanyDetails';
+import { Separator } from '@radix-ui/react-separator';
 
 const JobSummary = ({ job }: { job: Job }) => {
   return (
@@ -79,6 +53,12 @@ const JobSummary = ({ job }: { job: Job }) => {
           />
         </div>
       </div>
+      {job.company_info && (
+        <>
+          <Separator className='my-6' />
+          <CompanyDetails job={job} />
+        </>
+      )}
     </div>
   );
 };
